@@ -514,3 +514,124 @@ def test_summary_keeps_native_value_on_usd_holding(client: TestClient) -> None:
     assert row["instrument_currency"] == "USD"
     assert Decimal(str(row["last_price"])) == Decimal("400")
     assert Decimal(str(row["value"])) == Decimal("800")
+
+
+def _buy(client: TestClient, instrument_id: int, broker_id: int, quantity: int) -> dict:
+    response = client.post(
+        "/trades",
+        json={
+            "instrument_id": instrument_id,
+            "broker_id": broker_id,
+            "type": "buy",
+            "year": 2007,
+            "quantity": quantity,
+        },
+    )
+    assert response.status_code == 201
+    return response.json()
+
+
+def test_reducing_buy_below_sells_is_rejected(client: TestClient) -> None:
+    eco, dcor, _ = _ids(client)
+    buy = _buy(client, eco, dcor, 10)
+    assert (
+        client.post(
+            "/trades",
+            json={
+                "instrument_id": eco,
+                "broker_id": dcor,
+                "type": "sell",
+                "year": 2025,
+                "quantity": 6,
+            },
+        ).status_code
+        == 201
+    )
+    response = client.put(
+        f"/trades/{buy['id']}",
+        json={
+            "instrument_id": eco,
+            "broker_id": dcor,
+            "type": "buy",
+            "year": 2007,
+            "quantity": 3,
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "negative_balance"
+    balance = next(row["balance"] for row in client.get("/balances").json() if row["broker_id"] == dcor)
+    assert Decimal(str(balance)) == Decimal("4")
+
+
+def test_moving_buy_off_a_pair_with_sells_is_rejected(client: TestClient) -> None:
+    eco, dcor, trii = _ids(client)
+    buy = _buy(client, eco, dcor, 10)
+    client.post(
+        "/trades",
+        json={
+            "instrument_id": eco,
+            "broker_id": dcor,
+            "type": "sell",
+            "year": 2025,
+            "quantity": 4,
+        },
+    )
+    response = client.put(
+        f"/trades/{buy['id']}",
+        json={
+            "instrument_id": eco,
+            "broker_id": trii,
+            "type": "buy",
+            "year": 2007,
+            "quantity": 10,
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "negative_balance"
+    balances = {row["broker_id"]: row["balance"] for row in client.get("/balances").json()}
+    assert Decimal(str(balances[dcor])) == Decimal("6")
+
+
+def test_reducing_buy_that_still_covers_sells_is_allowed(client: TestClient) -> None:
+    eco, dcor, _ = _ids(client)
+    buy = _buy(client, eco, dcor, 10)
+    client.post(
+        "/trades",
+        json={
+            "instrument_id": eco,
+            "broker_id": dcor,
+            "type": "sell",
+            "year": 2025,
+            "quantity": 6,
+        },
+    )
+    response = client.put(
+        f"/trades/{buy['id']}",
+        json={
+            "instrument_id": eco,
+            "broker_id": dcor,
+            "type": "buy",
+            "year": 2007,
+            "quantity": 8,
+        },
+    )
+    assert response.status_code == 200
+    balance = next(row["balance"] for row in client.get("/balances").json() if row["broker_id"] == dcor)
+    assert Decimal(str(balance)) == Decimal("2")
+
+
+def test_summary_total_is_null_when_currencies_mix(client: TestClient) -> None:
+    eco, dcor, _ = _ids(client)
+    _buy(client, eco, dcor, 10)
+    client.put("/prices", json={"instrument_id": eco, "year": 2026, "month": 9, "price": 100})
+    usd = client.post("/instruments", json={"name": "AAPL", "active": True, "currency": "USD"}).json()
+    _buy(client, usd["id"], dcor, 2)
+    client.put("/prices", json={"instrument_id": usd["id"], "year": 2026, "month": 8, "price": 400})
+    summary = client.get("/summary").json()
+    assert summary["total"] is None
+    valued = [row for row in summary["positions"] if row["value"] is not None]
+    assert {row["instrument_currency"] for row in valued} == {"COP", "USD"}
+    assert all(row["weight_pct"] is None for row in valued)
+    by_name = {row["instrument_name"]: Decimal(str(row["value"])) for row in valued}
+    assert by_name["Ecopetrol"] == Decimal("1000")
+    assert by_name["AAPL"] == Decimal("800")

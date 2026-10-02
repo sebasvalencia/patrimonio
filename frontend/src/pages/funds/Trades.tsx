@@ -51,9 +51,9 @@ export default function FundsTrades() {
       type,
       year: Number(year),
       month: month === "" ? null : Number(month),
-      quantity: Number(quantity),
-      commission: commission === "" ? 0 : Number(commission),
-      price: price === "" ? null : Number(price),
+      quantity,
+      commission: commission === "" ? "0" : commission,
+      price: price === "" ? null : price,
     };
   }
 
@@ -65,9 +65,9 @@ export default function FundsTrades() {
     setType(row.type);
     setYear(String(row.year));
     setMonth(row.month == null ? "" : String(row.month));
-    setQuantity(String(Number(row.quantity)));
-    setPrice(row.price == null ? "" : String(Number(row.price)));
-    setCommission(String(Number(row.commission)));
+    setQuantity(row.quantity);
+    setPrice(row.price ?? "");
+    setCommission(row.commission);
   }
 
   async function onSubmit(e: FormEvent) {

@@ -1,12 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
 from app.funds.models import FundTrade
 from app.funds.schemas import FundTradeIn, FundTradeOut
-from app.funds.services.balances import pair_balance
-from app.funds.services.rules import get_fund_trade, validate_trade
+from app.funds.services.rules import ensure_projected_balance, get_fund_trade, validate_replacement, validate_trade
 
 router = APIRouter(prefix="/trades", tags=["funds"])
 
@@ -73,8 +72,10 @@ def create(body: FundTradeIn, db: Session = Depends(get_db)) -> FundTradeOut:
 @router.put("/{trade_id}", response_model=FundTradeOut)
 def update(trade_id: int, body: FundTradeIn, db: Session = Depends(get_db)) -> FundTradeOut:
     row = get_fund_trade(db, trade_id)
-    validate_trade(
+    validate_replacement(
         db,
+        old_fund_id=row.fund_id,
+        old_fiduciary_id=row.fiduciary_id,
         fund_id=body.fund_id,
         fiduciary_id=body.fiduciary_id,
         type=body.type,
@@ -98,8 +99,12 @@ def update(trade_id: int, body: FundTradeIn, db: Session = Depends(get_db)) -> F
 @router.delete("/{trade_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete(trade_id: int, db: Session = Depends(get_db)) -> None:
     row = get_fund_trade(db, trade_id)
-    remaining = pair_balance(db, row.fund_id, row.fiduciary_id, exclude_id=row.id)
-    if remaining < 0:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "cannot_delete_fund_trade")
+    ensure_projected_balance(
+        db,
+        fund_id=row.fund_id,
+        fiduciary_id=row.fiduciary_id,
+        exclude_id=row.id,
+        removed_error="cannot_delete_fund_trade",
+    )
     db.delete(row)
     db.commit()

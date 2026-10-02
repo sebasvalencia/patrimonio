@@ -1,3 +1,6 @@
+from datetime import date
+from decimal import Decimal
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -5,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import FxRate
 from app.schemas import FxRateIn, FxRateOut
+from app.services.trm_source import TrmSourceError, fetch_series, months_due, rate_on, today
 
 router = APIRouter(prefix="/fx-rates", tags=["fx"])
 
@@ -18,6 +22,32 @@ def list_rates(
     if year is not None:
         q = q.where(FxRate.year == year)
     return list(db.scalars(q.order_by(FxRate.year, FxRate.month)).all())
+
+
+def _store_if_missing(db: Session, year: int, month: int, cop_per_usd: Decimal) -> None:
+    existing = db.scalar(select(FxRate).where(FxRate.year == year, FxRate.month == month))
+    if existing is not None:
+        return
+    db.add(FxRate(year=year, month=month, cop_per_usd=cop_per_usd))
+
+
+@router.post("/official", response_model=list[FxRateOut])
+def import_official(
+    year: int = Query(ge=1900, le=2100),
+    db: Session = Depends(get_db),
+) -> list[FxRate]:
+    try:
+        records = fetch_series(year)
+    except TrmSourceError:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, "fx_source_unavailable") from None
+    on = today()
+    for month in months_due(year, on):
+        rate = rate_on(records, date(year, month, 1))
+        if rate is None:
+            continue
+        _store_if_missing(db, year, month, rate)
+    db.commit()
+    return list_rates(year=year, db=db)
 
 
 @router.put("", response_model=FxRateOut)

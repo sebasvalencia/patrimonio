@@ -273,3 +273,115 @@ def test_fund_target_progress(client: TestClient) -> None:
     assert Decimal(str(av["target"])) == Decimal("3100")
     assert Decimal(str(av["last_price"])) == Decimal("2480")
     assert Decimal(str(av["progress_pct"])) == (Decimal("2480") / Decimal("3100")) * Decimal("100")
+
+
+def test_reducing_subscribe_below_redemptions_is_rejected(client: TestClient) -> None:
+    fund_id, fid_id = _catalog(client)
+    opened = client.post(
+        "/funds/trades",
+        json={
+            "fund_id": fund_id,
+            "fiduciary_id": fid_id,
+            "type": "subscribe",
+            "year": 2024,
+            "quantity": 10,
+        },
+    )
+    assert opened.status_code == 201
+    client.post(
+        "/funds/trades",
+        json={
+            "fund_id": fund_id,
+            "fiduciary_id": fid_id,
+            "type": "redeem",
+            "year": 2025,
+            "quantity": 6,
+        },
+    )
+    response = client.put(
+        f"/funds/trades/{opened.json()['id']}",
+        json={
+            "fund_id": fund_id,
+            "fiduciary_id": fid_id,
+            "type": "subscribe",
+            "year": 2024,
+            "quantity": 3,
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "negative_balance"
+    balance = client.get("/funds/summary").json()["positions"][0]["balance"]
+    assert Decimal(str(balance)) == Decimal("4")
+
+
+def test_moving_subscribe_off_a_pair_with_redemptions_is_rejected(client: TestClient) -> None:
+    fund_id, fid_id = _catalog(client)
+    other = client.post("/funds/fiduciaries", json={"name": "Otra Fiduciaria"}).json()
+    opened = client.post(
+        "/funds/trades",
+        json={
+            "fund_id": fund_id,
+            "fiduciary_id": fid_id,
+            "type": "subscribe",
+            "year": 2024,
+            "quantity": 10,
+        },
+    ).json()
+    client.post(
+        "/funds/trades",
+        json={
+            "fund_id": fund_id,
+            "fiduciary_id": fid_id,
+            "type": "redeem",
+            "year": 2025,
+            "quantity": 4,
+        },
+    )
+    response = client.put(
+        f"/funds/trades/{opened['id']}",
+        json={
+            "fund_id": fund_id,
+            "fiduciary_id": other["id"],
+            "type": "subscribe",
+            "year": 2024,
+            "quantity": 10,
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "negative_balance"
+
+
+def test_wealth_total_is_null_when_modules_use_different_currencies(client: TestClient) -> None:
+    eco = {row["name"]: row["id"] for row in client.get("/instruments").json()}["Ecopetrol"]
+    dcor = {row["name"]: row["id"] for row in client.get("/brokers").json()}["D Corredores"]
+    client.post(
+        "/trades",
+        json={
+            "instrument_id": eco,
+            "broker_id": dcor,
+            "type": "buy",
+            "year": 2007,
+            "quantity": 10,
+        },
+    )
+    client.put("/prices", json={"instrument_id": eco, "year": 2026, "month": 9, "price": 100})
+    fid = client.post("/funds/fiduciaries", json={"name": "Fiduciaria Demo"}).json()
+    fund = client.post(
+        "/funds/funds",
+        json={"name": "FIC Dolar", "active": True, "currency": "USD"},
+    ).json()
+    client.post(
+        "/funds/trades",
+        json={
+            "fund_id": fund["id"],
+            "fiduciary_id": fid["id"],
+            "type": "subscribe",
+            "year": 2024,
+            "quantity": 5,
+        },
+    )
+    client.put("/funds/unit-values", json={"fund_id": fund["id"], "year": 2026, "month": 9, "value": 100})
+    wealth = client.get("/wealth").json()
+    assert Decimal(str(wealth["equities"]["total"])) == Decimal("1000")
+    assert Decimal(str(wealth["funds"]["total"])) == Decimal("500")
+    assert wealth["total"] is None

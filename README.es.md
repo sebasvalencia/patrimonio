@@ -20,7 +20,7 @@ Registro y seguimiento de un portafolio de acciones de Colombia (COP) y de Estad
 - **Tema, idioma y moneda de pantalla**: selects compactos en el header (oscuro / claro, ES / EN / IT, COP / USD). La preferencia se guarda en `localStorage`. Los nombres de títulos y corredores no se traducen.
 - **Moneda del título vs vista**: precios de mercado, objetivos, precio del movimiento y comisión se guardan en la moneda del título. El toggle COP / USD del header convierte con la TRM de ese mes (`cop_per_usd`). Si la vista es la misma moneda, no hace falta tasa. Si falta la TRM para un monto cruzado, se muestra “sin TRM”; no se inventa.
 - **Fondos (FIC)**: catálogo aparte de fondos y fiduciarias (no son corredores). Suscripciones y rescates por par fondo + fiduciaria; **valor de unidad** mensual (no se escribe desde el movimiento); objetivo por fondo. Mismas reglas que acciones: no rescatar de más, no suscribir un fondo inactivo, no inactivar con unidades > 0.
-- **Resumen combinado**: `GET /wealth` suma el total de acciones y el de fondos. La UI muestra un total combinado y dos bloques (peso %, variación del valor de unidad y avance a objetivo por módulo). Los ETF de bolsa siguen como títulos; los FIC no reutilizan `trade` ni `broker`.
+- **Resumen combinado**: `GET /wealth` devuelve el total de cada módulo solo cuando todas las posiciones con valor comparten una moneda. El `total` combinado existe solo si ambos módulos comparten esa moneda (un módulo sin filas valuadas no impone moneda). Si no, `total` es null. La UI convierte cada posición y muestra un total de pantalla, más dos bloques (peso %, variación del valor de unidad y avance a objetivo por módulo). Los ETF de bolsa siguen como títulos; los FIC no reutilizan `trade` ni `broker`.
 - **Seed** inicial: 11 títulos (Ecopetrol, Celsia, ETB, GEB, Mineros, PG Argos, PG SURA, Cemagros, PF Cemagros, Grupo Argos, Grupo Sura), todos **COP**, y 2 corredores (D Corredores, Trii). El catálogo FIC arranca vacío.
 
 
@@ -40,6 +40,7 @@ Portafolio ficticio en `demo/demo.sql`. Para levantarlo en local, ver [Probar co
 | Inactivar con saldo > 0 (suma de todos los corredores) | Error 400                                                            |
 | Compra de un título inactivo                           | Error 400; hay que reactivarlo primero                               |
 | Borrar un movimiento si el saldo quedaría negativo     | Error 400                                                            |
+| Editar un movimiento si el saldo de algún par quedaría negativo | Error 400                                                     |
 | Borrar título o corredor con datos asociados           | Error 409                                                            |
 | Variación de un mes                                    | Solo si existe precio en ese mes **y** en el mes calendario anterior |
 | Precio por acción del movimiento                       | Opcional en filas viejas; si se carga, > 0 en la moneda del título. No es el precio mensual; no cambia el total del Resumen |
@@ -51,7 +52,7 @@ Portafolio ficticio en `demo/demo.sql`. Para levantarlo en local, ver [Probar co
 | Rescate mayor al saldo del par fondo+fiduciaria        | Error 400                                                            |
 | Inactivar un fondo con unidades > 0                    | Error 400                                                            |
 | Precio de operación o comisión del FIC                 | Se guarda en el movimiento; no escribe `fund_unit_value` ni cambia el total |
-| Patrimonio combinado                                   | Total de acciones + total de fondos (solo filas activas con precio / valor) |
+| Patrimonio combinado                                   | El `total` del API solo si todas las filas con valor comparten moneda; si no, null. La UI convierte cada fila |
 
 
 Moneda persistida: **COP o USD por título**. El toggle del header es solo presentación: `monto_usd = monto_cop / cop_per_usd` y `monto_cop = monto_usd × cop_per_usd` con la TRM **de ese mes**.

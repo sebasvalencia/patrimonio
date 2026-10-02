@@ -20,7 +20,7 @@ Track a stock portfolio in Colombia (COP) and the United States (USD), plus Colo
 - **Theme, language, display currency**: compact selects in the header (dark / light, ES / EN / IT, COP / USD). Preference is stored in `localStorage`. Holding and broker names are not translated.
 - **Quote currency vs display**: market prices, targets, trade price, and commission are stored in the holding’s currency. The header COP / USD toggle converts with that month’s TRM (`cop_per_usd`). Same-currency view does not need a rate. If the rate is missing for a cross-currency amount, the UI shows “no FX”; it does not invent one.
 - **Funds (FIC)**: separate catalog of funds and fiduciaries (not brokers). Subscriptions and redemptions per fund + fiduciary; monthly **unit value** (not written from the trade); target per fund. Same rules as stocks: no over-redeem, no subscribe to an inactive fund, no deactivate with units > 0.
-- **Combined summary**: `GET /wealth` adds the stock total and the fund total. The UI shows one combined total and two blocks (weight %, unit-value change, and target progress per module). Exchange-listed ETFs stay as holdings; FICs do not reuse `trade` or `broker`.
+- **Combined summary**: `GET /wealth` returns each module total only when every valued position in that module shares one currency. The combined `total` is set only when both modules share that currency (a module with no valued rows does not force one). Otherwise `total` is null. The UI converts each position and shows one display total, plus two blocks (weight %, unit-value change, and target progress per module). Exchange-listed ETFs stay as holdings; FICs do not reuse `trade` or `broker`.
 - **Initial seed**: 11 holdings (Ecopetrol, Celsia, ETB, GEB, Mineros, PG Argos, PG SURA, Cemagros, PF Cemagros, Grupo Argos, Grupo Sura), all **COP**, and 2 brokers (D Corredores, Trii). The FIC catalog starts empty.
 
 
@@ -40,6 +40,7 @@ Fictional portfolio in `demo/demo.sql`. To run the app with this data, see [Try 
 | Deactivate with balance > 0 (sum across all brokers)   | 400 error                                                           |
 | Buy an inactive holding                                | 400 error; reactivate it first                                      |
 | Delete a trade if the balance would go negative        | 400 error                                                           |
+| Edit a trade if either pair’s balance would go negative | 400 error                                                          |
 | Delete a holding or broker that still has related data | 409 error                                                           |
 | Change for a month                                     | Only if that month **and** the previous calendar month have a price |
 | Trade price per share                                  | Optional on old rows; if set, > 0 in the holding’s currency. Not the monthly market price; does not change Summary total |
@@ -51,7 +52,7 @@ Fictional portfolio in `demo/demo.sql`. To run the app with this data, see [Try 
 | Redeem more units than the fund+fiduciary balance      | 400 error                                                           |
 | Deactivate a fund with units > 0                       | 400 error                                                           |
 | Fund trade unit price or commission                    | Stored on the movement; does not write `fund_unit_value` or change the total |
-| Combined wealth                                        | Stocks total + funds total (only active rows with a price / unit value) |
+| Combined wealth                                        | API `total` only when every valued row shares one currency; otherwise null. The UI converts each row |
 
 
 Persisted currency: **COP or USD per holding**. The header toggle is display only: `amount_usd = amount_cop / cop_per_usd` and `amount_cop = amount_usd × cop_per_usd` with that **month’s** TRM.

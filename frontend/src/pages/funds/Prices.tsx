@@ -30,8 +30,7 @@ export default function FundsPrices() {
     if (key in draft) return draft[key];
     const found = values.find((p) => p.fund_id === fundId && p.month === month);
     if (!found) return "";
-    const n = Number(found.value);
-    return Number.isFinite(n) ? String(n) : found.value;
+    return found.value;
   }
 
   async function save(e: FormEvent) {
@@ -46,7 +45,7 @@ export default function FundsPrices() {
           fund_id: id,
           year,
           month,
-          value: Number(raw),
+          value: raw.trim(),
         });
       }
       setDraft({});

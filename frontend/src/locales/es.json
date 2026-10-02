@@ -101,8 +101,10 @@
   "fx": {
     "title": "TRM mensual (COP por 1 USD)",
     "saved": "TRM guardada",
+    "fetched": "TRM oficial guardada en los meses vacíos",
+    "fetch": "Traer TRM oficial",
     "missing": "sin TRM",
-    "hint": "La tasa se carga a mano. Si falta el mes, no se convierte entre COP y USD."
+    "hint": "Traer TRM oficial guarda la tasa vigente el día 1 en los meses vacíos. No reemplaza una tasa ya guardada. Si falta el mes, no se convierte entre COP y USD."
   },
   "errors": {
     "brokerNotFound": "Corredor no encontrado",
@@ -111,6 +113,7 @@
     "targetNotFound": "Objetivo no encontrado",
     "priceNotFound": "Precio no encontrado",
     "fxNotFound": "TRM no encontrada",
+    "fxSourceUnavailable": "No se pudo leer la TRM oficial. No se guardó nada.",
     "brokerExists": "Ya existe un corredor con ese nombre",
     "instrumentExists": "Ya existe un título con ese nombre",
     "cannotInactivate": "No se puede inactivar: el título todavía tiene saldo mayor a 0",
@@ -119,6 +122,7 @@
     "cannotDeleteInstrument": "No se puede borrar: hay movimientos, precios u objetivos de este título",
     "cannotDeleteTrade": "No se puede borrar: el saldo del corredor quedaría negativo",
     "sellExceedsBalance": "La venta supera el saldo de este corredor",
+    "negativeBalance": "El saldo quedaría negativo",
     "cannotChangeCurrency": "No se puede cambiar la moneda: el título ya tiene movimientos, precios u objetivos",
     "fiduciaryNotFound": "Fiduciaria no encontrada",
     "fundNotFound": "Fondo no encontrado",

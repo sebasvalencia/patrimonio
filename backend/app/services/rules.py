@@ -54,6 +54,44 @@ def validate_currency_change(db: Session, instrument: Instrument, currency: str)
         raise BusinessRule("cannot_change_currency")
 
 
+def _lock_pair(db: Session, instrument_id: int, broker_id: int) -> None:
+    if db.get_bind().dialect.name != "postgresql":
+        return
+    db.execute(
+        select(Trade.id)
+        .where(Trade.instrument_id == instrument_id, Trade.broker_id == broker_id)
+        .with_for_update()
+    ).all()
+
+
+def ensure_projected_balance(
+    db: Session,
+    *,
+    instrument_id: int,
+    broker_id: int,
+    exclude_id: int | None = None,
+    incoming_type: str | None = None,
+    incoming_quantity: Decimal | None = None,
+    removed_error: str = "negative_balance",
+) -> None:
+    """Lock the pair, then reject a projected balance below zero.
+
+    ``incoming_*`` is the trade being inserted or the replacement on this pair.
+    Omit it when the trade is only leaving the pair (edit that moves it, or delete).
+    """
+    _lock_pair(db, instrument_id, broker_id)
+    balance = pair_balance(db, instrument_id, broker_id, exclude_id=exclude_id)
+    if incoming_type is not None and incoming_quantity is not None:
+        balance += incoming_quantity if incoming_type == "buy" else -incoming_quantity
+    if balance >= 0:
+        return
+    if incoming_type == "sell":
+        raise BusinessRule("sell_exceeds_balance")
+    if incoming_type is None:
+        raise BusinessRule(removed_error)
+    raise BusinessRule("negative_balance")
+
+
 def validate_trade(
     db: Session,
     *,
@@ -67,6 +105,44 @@ def validate_trade(
     inst = get_instrument(db, instrument_id)
     if type == "buy" and not inst.active:
         raise BusinessRule("cannot_buy_inactive")
-    actual = pair_balance(db, instrument_id, broker_id, exclude_id=exclude_id)
-    if type == "sell" and quantity > actual:
-        raise BusinessRule("sell_exceeds_balance")
+    ensure_projected_balance(
+        db,
+        instrument_id=instrument_id,
+        broker_id=broker_id,
+        exclude_id=exclude_id,
+        incoming_type=type,
+        incoming_quantity=quantity,
+    )
+
+
+def validate_replacement(
+    db: Session,
+    *,
+    old_instrument_id: int,
+    old_broker_id: int,
+    instrument_id: int,
+    broker_id: int,
+    type: str,
+    quantity: Decimal,
+    exclude_id: int,
+) -> None:
+    """Check the pair the trade leaves and the pair it lands on.
+
+    Pairs are locked in id order so two edits cannot deadlock.
+    """
+    get_broker(db, broker_id)
+    inst = get_instrument(db, instrument_id)
+    if type == "buy" and not inst.active:
+        raise BusinessRule("cannot_buy_inactive")
+    old = (old_instrument_id, old_broker_id)
+    new = (instrument_id, broker_id)
+    for pair in sorted({old, new}):
+        landing = pair == new
+        ensure_projected_balance(
+            db,
+            instrument_id=pair[0],
+            broker_id=pair[1],
+            exclude_id=exclude_id,
+            incoming_type=type if landing else None,
+            incoming_quantity=quantity if landing else None,
+        )

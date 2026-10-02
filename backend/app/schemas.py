@@ -132,14 +132,14 @@ class PositionOut(BaseModel):
 
 
 class SummaryOut(BaseModel):
-    total: VisibleDecimal
+    total: VisibleDecimal | None
     positions: list[PositionOut]
 
 
 class WealthOut(BaseModel):
     equities: SummaryOut
     funds: SummaryOut
-    total: VisibleDecimal
+    total: VisibleDecimal | None
 
 
 class TargetIn(BaseModel):

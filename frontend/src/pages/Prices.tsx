@@ -30,8 +30,7 @@ export default function Prices() {
     if (key in draft) return draft[key];
     const found = prices.find((p) => p.instrument_id === instrumentId && p.month === month);
     if (!found) return "";
-    const n = Number(found.price);
-    return Number.isFinite(n) ? String(n) : found.price;
+    return found.price;
   }
 
   async function save(e: FormEvent) {
@@ -46,7 +45,7 @@ export default function Prices() {
           instrument_id: id,
           year,
           month,
-          price: Number(raw),
+          price: raw.trim(),
         });
       }
       setDraft({});

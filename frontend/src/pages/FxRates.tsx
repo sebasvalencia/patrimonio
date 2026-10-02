@@ -13,6 +13,7 @@ export default function FxRates() {
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const months = t("months.short", { returnObjects: true }) as string[];
 
   async function load(y: number) {
@@ -28,8 +29,7 @@ export default function FxRates() {
     if (key in draft) return draft[key];
     const found = rows.find((r) => r.month === month);
     if (!found) return "";
-    const n = Number(found.cop_per_usd);
-    return Number.isFinite(n) ? String(n) : found.cop_per_usd;
+    return found.cop_per_usd;
   }
 
   async function save(e: FormEvent) {
@@ -42,7 +42,7 @@ export default function FxRates() {
         await api.upsertFxRate({
           year,
           month: Number(key),
-          cop_per_usd: Number(raw),
+          cop_per_usd: raw.trim(),
         });
       }
       setDraft({});
@@ -51,6 +51,27 @@ export default function FxRates() {
       setOk(t("fx.saved"));
     } catch (err) {
       setError(err instanceof Error ? err.message : t("common.error"));
+    }
+  }
+
+  async function fetchOfficial() {
+    setError(null);
+    setOk(null);
+    setBusy(true);
+    try {
+      const saved = await api.importOfficialFx(year);
+      setRows(saved);
+      setDraft((currentDraft) => {
+        const next = { ...currentDraft };
+        for (const row of saved) delete next[String(row.month)];
+        return next;
+      });
+      refreshRates();
+      setOk(t("fx.fetched"));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("common.error"));
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -73,8 +94,16 @@ export default function FxRates() {
               onChange={(e) => setYear(Number(e.target.value))}
             />
           </label>
-          <button className="rounded bg-accent px-4 py-2 text-sm text-white" type="submit">
+          <button className="rounded bg-accent px-4 py-2 text-sm text-white" type="submit" disabled={busy}>
             {t("common.saveChanges")}
+          </button>
+          <button
+            className="rounded border border-line px-4 py-2 text-sm"
+            type="button"
+            onClick={fetchOfficial}
+            disabled={busy}
+          >
+            {t("fx.fetch")}
           </button>
         </div>
         <div className="mt-4 overflow-x-auto">

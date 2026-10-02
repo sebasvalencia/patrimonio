@@ -9,6 +9,7 @@ from app.database import get_db
 from app.models import Broker, Instrument, MonthlyPrice, Trade
 from app.schemas import BalanceOut, PositionOut, SummaryOut, VariationOut, VariationPointOut
 from app.services.balances import pair_balance
+from app.services.valuation import assign_native_total
 from app.services.variation import variation_points
 
 router = APIRouter(tags=["summary"])
@@ -79,14 +80,7 @@ def build_equity_summary(db: Session) -> SummaryOut:
             )
         )
 
-    total = sum((p.value for p in positions if p.value is not None), Decimal(0))
-    for p in positions:
-        if p.value is not None and total > 0:
-            p.weight_pct = (p.value / total) * Decimal(100)
-        elif p.value is not None:
-            p.weight_pct = Decimal(0)
-
-    positions.sort(key=lambda r: (-float(r.value or 0), r.instrument_name))
+    total = assign_native_total(positions)
     return SummaryOut(total=total, positions=positions)
 
 

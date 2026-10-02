@@ -46,16 +46,16 @@ export type Position = {
   missing_price: boolean;
   instrument_currency: "COP" | "USD";
 };
-export type Summary = { total: string; positions: Position[] };
+export type Summary = { total: string | null; positions: Position[] };
 export type TradePayload = {
   instrument_id: number;
   broker_id: number;
   type: "buy" | "sell";
   year: number;
   month: number | null;
-  quantity: number;
-  commission: number;
-  price: number | null;
+  quantity: string;
+  commission: string;
+  price: string | null;
 };
 export type Target = {
   id: number;
@@ -117,9 +117,9 @@ export type FundTradePayload = {
   type: "subscribe" | "redeem";
   year: number;
   month: number | null;
-  quantity: number;
-  commission: number;
-  price: number | null;
+  quantity: string;
+  commission: string;
+  price: string | null;
 };
 export type UnitValue = {
   id: number;
@@ -169,7 +169,7 @@ export type FundVariation = {
     variation_pct: string | null;
   }[];
 };
-export type Wealth = { equities: Summary; funds: Summary; total: string };
+export type Wealth = { equities: Summary; funds: Summary; total: string | null };
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -215,7 +215,7 @@ export const api = {
     req<Trade>(`/trades/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   deleteTrade: (id: number) => req<void>(`/trades/${id}`, { method: "DELETE" }),
   prices: (year?: number) => req<Price[]>(year ? `/prices?year=${year}` : "/prices"),
-  upsertPrice: (body: { instrument_id: number; year: number; month: number; price: number }) =>
+  upsertPrice: (body: { instrument_id: number; year: number; month: number; price: string }) =>
     req<Price>("/prices", { method: "PUT", body: JSON.stringify(body) }),
   pendingPrices: (year: number, month: number) =>
     req<PendingPrices>(`/prices/pending?year=${year}&month=${month}`),
@@ -223,12 +223,14 @@ export const api = {
   variation: (instrumentId: number) =>
     req<Variation>(`/price-variation?instrument_id=${instrumentId}`),
   targets: (instrumentId: number) => req<Target[]>(`/targets?instrument_id=${instrumentId}`),
-  upsertTarget: (body: { instrument_id: number; year: number; month: number; price: number }) =>
+  upsertTarget: (body: { instrument_id: number; year: number; month: number; price: string }) =>
     req<Target>("/targets", { method: "PUT", body: JSON.stringify(body) }),
   targetProgress: (instrumentId: number) =>
     req<TargetProgress>(`/target-progress?instrument_id=${instrumentId}`),
   fxRates: (year?: number) => req<FxRate[]>(year ? `/fx-rates?year=${year}` : "/fx-rates"),
-  upsertFxRate: (body: { year: number; month: number; cop_per_usd: number }) =>
+  importOfficialFx: (year: number) =>
+    req<FxRate[]>(`/fx-rates/official?year=${year}`, { method: "POST" }),
+  upsertFxRate: (body: { year: number; month: number; cop_per_usd: string }) =>
     req<FxRate>("/fx-rates", { method: "PUT", body: JSON.stringify(body) }),
   wealth: () => req<Wealth>("/wealth"),
   fiduciaries: () => req<Fiduciary[]>("/funds/fiduciaries"),
@@ -249,7 +251,7 @@ export const api = {
   deleteFundTrade: (id: number) => req<void>(`/funds/trades/${id}`, { method: "DELETE" }),
   fundUnitValues: (year?: number) =>
     req<UnitValue[]>(year ? `/funds/unit-values?year=${year}` : "/funds/unit-values"),
-  upsertFundUnitValue: (body: { fund_id: number; year: number; month: number; value: number }) =>
+  upsertFundUnitValue: (body: { fund_id: number; year: number; month: number; value: string }) =>
     req<UnitValue>("/funds/unit-values", { method: "PUT", body: JSON.stringify(body) }),
   pendingFundUnitValues: (year: number, month: number) =>
     req<PendingUnitValues>(`/funds/unit-values/pending?year=${year}&month=${month}`),
@@ -257,7 +259,7 @@ export const api = {
   fundVariation: (fundId: number) =>
     req<FundVariation>(`/funds/price-variation?fund_id=${fundId}`),
   fundTargets: (fundId: number) => req<FundTarget[]>(`/funds/targets?fund_id=${fundId}`),
-  upsertFundTarget: (body: { fund_id: number; year: number; month: number; price: number }) =>
+  upsertFundTarget: (body: { fund_id: number; year: number; month: number; price: string }) =>
     req<FundTarget>("/funds/targets", { method: "PUT", body: JSON.stringify(body) }),
   fundTargetProgress: (fundId: number) =>
     req<FundTargetProgress>(`/funds/target-progress?fund_id=${fundId}`),

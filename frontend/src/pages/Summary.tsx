@@ -159,7 +159,7 @@ export default function SummaryPage() {
         instrument_id: Number(eqSel),
         year: Number(eqYear),
         month: Number(eqMonth),
-        price: Number(eqPrice),
+        price: eqPrice.trim(),
       });
       setEqPrice("");
       const [a, o] = await Promise.all([api.targetProgress(Number(eqSel)), api.targets(Number(eqSel))]);
@@ -180,7 +180,7 @@ export default function SummaryPage() {
         fund_id: Number(fdSel),
         year: Number(fdYear),
         month: Number(fdMonth),
-        price: Number(fdPrice),
+        price: fdPrice.trim(),
       });
       setFdPrice("");
       const [a, o] = await Promise.all([
