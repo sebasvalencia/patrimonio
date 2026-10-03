@@ -45,6 +45,10 @@ export default function Trades() {
   }
 
   function payload() {
+    let fee = commission;
+    if (fee === "") {
+      fee = "0";
+    }
     return {
       instrument_id: Number(instrumentId),
       broker_id: Number(brokerId),
@@ -52,7 +56,7 @@ export default function Trades() {
       year: Number(year),
       month: month === "" ? null : Number(month),
       quantity,
-      commission: commission === "" ? "0" : commission,
+      commission: fee,
       price: price === "" ? null : price,
     };
   }

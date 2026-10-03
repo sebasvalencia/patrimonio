@@ -80,8 +80,8 @@ export default function SummaryPage() {
   const eqDisplay = useDisplayPositions(wealth?.equities.positions ?? []);
   const fdDisplay = useDisplayPositions(wealth?.funds.positions ?? []);
   const combinedTotal =
-    eqDisplay.filter((p) => p.valueDisplay != null).reduce((acc, p) => acc + (p.valueDisplay ?? 0), 0) +
-    fdDisplay.filter((p) => p.valueDisplay != null).reduce((acc, p) => acc + (p.valueDisplay ?? 0), 0);
+    eqDisplay.reduce((acc, p) => acc + Number(p.valueDisplay), 0) +
+    fdDisplay.reduce((acc, p) => acc + Number(p.valueDisplay), 0);
 
   useEffect(() => {
     Promise.all([api.wealth(), api.instruments(), api.funds()])
@@ -95,7 +95,7 @@ export default function SummaryPage() {
 
   useEffect(() => {
     if (!activeEq.length) {
-      if (eqSel !== "") setEqSel("");
+      setEqSel("");
       return;
     }
     if (eqSel === "" || !activeEq.some((i) => i.id === eqSel)) setEqSel(activeEq[0].id);
@@ -103,7 +103,7 @@ export default function SummaryPage() {
 
   useEffect(() => {
     if (!activeFd.length) {
-      if (fdSel !== "") setFdSel("");
+      setFdSel("");
       return;
     }
     if (fdSel === "" || !activeFd.some((i) => i.id === fdSel)) setFdSel(activeFd[0].id);

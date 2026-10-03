@@ -24,19 +24,26 @@ const CURRENCIES: DisplayCurrency[] = ["COP", "USD"];
 const compactSelect =
   "rounded border border-line bg-surface-2 px-2 py-1 text-xs text-ink";
 
-function counterpart(path: string, next: "equities" | "funds"): string {
-  if (next === "funds") {
-    if (path === "/prices") return "/funds/prices";
-    if (path === "/trades") return "/funds/trades";
-    if (path === "/catalog") return "/funds/catalog";
-    if (path === "/") return "/funds";
-    return path;
+export function counterpart(path: string, next: "equities" | "funds"): string {
+  let dest = path;
+  if (next === "funds" && path === "/prices") {
+    dest = "/funds/prices";
+  } else if (next === "funds" && path === "/trades") {
+    dest = "/funds/trades";
+  } else if (next === "funds" && path === "/catalog") {
+    dest = "/funds/catalog";
+  } else if (next === "funds" && path === "/") {
+    dest = "/funds";
+  } else if (next === "equities" && path === "/funds/prices") {
+    dest = "/prices";
+  } else if (next === "equities" && path === "/funds/trades") {
+    dest = "/trades";
+  } else if (next === "equities" && path === "/funds/catalog") {
+    dest = "/catalog";
+  } else if (next === "equities" && path === "/funds") {
+    dest = "/";
   }
-  if (path === "/funds/prices") return "/prices";
-  if (path === "/funds/trades") return "/trades";
-  if (path === "/funds/catalog") return "/catalog";
-  if (path === "/funds") return "/";
-  return path;
+  return dest;
 }
 
 export default function App() {

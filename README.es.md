@@ -98,7 +98,7 @@ Al arrancar el contenedor `api` se ejecuta la migración Alembic, el seed del ca
 | UI           | React 19, TypeScript, Vite 6, Tailwind CSS 3, React Router 7, Recharts, i18next |
 | API          | Python 3.12, FastAPI, Pydantic v2, uv                                           |
 | Persistencia | PostgreSQL 16, SQLAlchemy 2, Alembic                                            |
-| Pruebas      | pytest, httpx (`TestClient`)                                                    |
+| Pruebas      | pytest, httpx (`TestClient`); Vitest (`npm test` en `frontend`)                 |
 | Empaquetado  | Docker Compose (servicios `db`, `api`, `web`)                                   |
 
 

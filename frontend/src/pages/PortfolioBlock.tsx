@@ -112,16 +112,16 @@ export default function PortfolioBlock({
   const CHART = chartTheme(theme);
   const displayPositions = useDisplayPositions(positions);
   const usdReady = displayPositions.filter((p) => p.valueDisplay != null);
-  const displayTotal = usdReady.reduce((acc, p) => acc + (p.valueDisplay ?? 0), 0);
+  const displayTotal = usdReady.reduce((acc, p) => acc + Number(p.valueDisplay), 0);
   const active = items.filter((i) => i.active);
 
   const pieData = useMemo(
     () =>
       usdReady
-        .filter((p) => (p.valueDisplay ?? 0) > 0)
+        .filter((p) => Number(p.valueDisplay) > 0)
         .map((p) => ({
           name: `${p.instrument_name} · ${p.broker_name}`,
-          value: p.valueDisplay ?? 0,
+          value: Number(p.valueDisplay),
         })),
     [usdReady],
   );

@@ -98,7 +98,7 @@ On start, the `api` container runs the Alembic migration, the catalog seed, and 
 | UI          | React 19, TypeScript, Vite 6, Tailwind CSS 3, React Router 7, Recharts, i18next |
 | API         | Python 3.12, FastAPI, Pydantic v2, uv                                           |
 | Persistence | PostgreSQL 16, SQLAlchemy 2, Alembic                                            |
-| Tests       | pytest, httpx (`TestClient`)                                                    |
+| Tests       | pytest, httpx (`TestClient`); Vitest (`npm test` in `frontend`)                 |
 | Packaging   | Docker Compose (`db`, `api`, `web` services)                                    |
 
 
