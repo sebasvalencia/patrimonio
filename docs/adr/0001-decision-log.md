@@ -136,3 +136,25 @@ The pytest suite creates the schema with `sqlite://` and `Base.metadata.create_a
 - Status: Accepted
 
 On startup the app loads 11 COP holdings (Ecopetrol, Celsia, ETB, GEB, Mineros, PG Argos, PG SURA, Cemagros, PF Cemagros, Grupo Argos, Grupo Sura) and 2 brokers (D Corredores, Trii). Cemagros and PF Cemagros are different holdings. The fund catalog starts empty. Opening buys are entered by the person using the app. Deleting a holding, broker, fund, or fiduciary that still has related data returns 409.
+
+## 0020. Reserve accounts are a yearly balance, not a fund
+
+- Status: Superseded by 0021
+
+Pensions, severance, and the emergency fund live in this app as a third book. They are not FICs: there is no unit count and no unit value. An institution has accounts. Each account has a purpose (`official_pension`, `severance`, `voluntary_pension`, `emergency`), a currency, and a liquid flag. An emergency account starts liquid; the others start illiquid. The flag can be changed later. Changing the purpose does not flip it.
+
+Each year has one row: the extract balance and the monthly contribution that applied that year. Saving a year updates that row and leaves the others. Years are typed one by one, including past years. The value in the wealth total is the balance of the latest year that has a row. If the current year is still empty, the previous year still counts. An account with no row stays in the summary with no value and stays out of the total. An inactive account leaves the summary. Deleting an institution that still has accounts, or an account that still has balances, returns 409. The seed does not invent institutions or balances.
+
+The combined total still requires one currency across every valued position. A reserve in another currency makes `/wealth` total null. Equity and fund weight pies stay inside their own blocks. Reserves are their own table: account, institution, purpose, liquidity, balance, year of that balance, and monthly contribution. There is no variation chart and no target.
+
+A reserve balance has no month. The client converts it with the December TRM of that balance year (`price_month` 12 on the position). That month is an exchange-rate anchor, not a price.
+
+A bank account with deposits and withdrawals is out of this slice.
+
+## 0021. A reserve balance is the value of one month
+
+- Status: Accepted
+
+Each account has one balance per month, typed in a year grid the same way a fund unit value is typed. An empty cell is left alone. Saving a month updates that cell and leaves the other months and years in place. A balance that was stored as a whole year before this change is kept as December of that year.
+
+The value in the wealth total is the balance of the latest month that has a row. If the current month is empty, the previous month still counts. The client converts that balance with the TRM of that same month. The summary shows the year and the month of the balance. It no longer stores a separate monthly contribution.

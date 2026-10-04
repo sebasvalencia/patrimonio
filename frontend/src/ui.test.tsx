@@ -16,6 +16,8 @@ import Trades from "./pages/Trades";
 import FundsCatalog from "./pages/funds/Catalog";
 import FundsPrices from "./pages/funds/Prices";
 import FundsTrades from "./pages/funds/Trades";
+import ReserveBalances from "./pages/reserves/Balances";
+import ReservesCatalog from "./pages/reserves/Catalog";
 import { applyTheme, chartTheme, readTheme, ThemeProvider, useTheme } from "./theme";
 import i18n from "./i18n";
 
@@ -67,6 +69,16 @@ const api = vi.hoisted(() => ({
   upsertFundTarget: vi.fn(),
   importOfficialFx: vi.fn(),
   upsertFxRate: vi.fn(),
+  institutions: vi.fn(),
+  createInstitution: vi.fn(),
+  patchInstitution: vi.fn(),
+  deleteInstitution: vi.fn(),
+  reserveAccounts: vi.fn(),
+  createReserveAccount: vi.fn(),
+  patchReserveAccount: vi.fn(),
+  deleteReserveAccount: vi.fn(),
+  reserveBalances: vi.fn(),
+  upsertReserveBalance: vi.fn(),
 }));
 
 vi.mock("./api", () => ({ api }));
@@ -76,6 +88,26 @@ const dormant = { id: 2, name: "ETB", active: false, currency: "USD" as const };
 const broker = { id: 3, name: "Trii" };
 const fund = { id: 4, name: "FIC Uno", active: true, currency: "COP" as const };
 const fiduciary = { id: 5, name: "Fid Uno" };
+const institution = { id: 80, name: "Protección" };
+const otherInstitution = { id: 81, name: "Otra" };
+const ceiba = {
+  id: 70,
+  name: "Ceiba",
+  institution_id: 80,
+  institution_name: "Protección",
+  currency: "COP" as const,
+  purpose: "official_pension" as const,
+  liquid: false,
+  active: true,
+};
+const apnea = {
+  ...ceiba,
+  id: 71,
+  name: "Apnea",
+  purpose: "emergency" as const,
+  liquid: true,
+  active: false,
+};
 
 const copPosition: Position = {
   instrument_id: 1,
@@ -223,7 +255,42 @@ beforeEach(async () => {
     total: null,
     equities: { total: "1000", positions: [copPosition, usdPosition, missingPosition] },
     funds: { total: "500", positions: [{ ...copPosition, instrument_name: "FIC Uno", instrument_id: 4 }] },
+    reserves: {
+      total: "1000",
+      positions: [
+        {
+          ...copPosition,
+          instrument_id: 70,
+          instrument_name: "Ceiba",
+          broker_id: 80,
+          broker_name: "Protección",
+          last_price: null,
+          price_year: 2025,
+          price_month: 12,
+          purpose: "official_pension",
+          liquid: false,
+        },
+        {
+          ...missingPosition,
+          instrument_id: 71,
+          instrument_name: "Yuxi",
+          broker_name: "Protección",
+          purpose: "emergency",
+          liquid: true,
+        },
+      ],
+    },
   });
+  api.institutions.mockResolvedValue([institution, otherInstitution]);
+  api.reserveAccounts.mockResolvedValue([ceiba, apnea]);
+  api.reserveBalances.mockResolvedValue([]);
+  api.createInstitution.mockResolvedValue(institution);
+  api.patchInstitution.mockResolvedValue(institution);
+  api.deleteInstitution.mockResolvedValue(undefined);
+  api.createReserveAccount.mockResolvedValue(ceiba);
+  api.patchReserveAccount.mockResolvedValue(ceiba);
+  api.deleteReserveAccount.mockResolvedValue(undefined);
+  api.upsertReserveBalance.mockResolvedValue({ id: 9 });
   api.funds.mockResolvedValue([fund, { ...fund, id: 6, name: "FIC Off", active: false }]);
   api.fiduciaries.mockResolvedValue([fiduciary]);
   api.fundTrades.mockResolvedValue([
@@ -883,7 +950,12 @@ describe("summary block", () => {
   it("leaves the selectors empty when nothing is active", async () => {
     api.instruments.mockResolvedValue([]);
     api.funds.mockResolvedValue([]);
-    api.wealth.mockResolvedValue({ total: "0", equities: { total: "0", positions: [] }, funds: { total: "0", positions: [] } });
+    api.wealth.mockResolvedValue({
+      total: "0",
+      equities: { total: "0", positions: [] },
+      funds: { total: "0", positions: [] },
+      reserves: { total: "0", positions: [] },
+    });
     shell(<Summary />);
     await waitFor(() => expect(api.wealth).toHaveBeenCalled());
     fireEvent.submit(screen.getAllByRole("button", { name: /Guardar objetivo/ })[0].closest("form")!);
@@ -939,10 +1011,17 @@ describe("app shell", () => {
     expect(counterpart("/fx", "funds")).toBe("/fx");
     expect(counterpart("/funds", "equities")).toBe("/");
     expect(counterpart("/fx", "equities")).toBe("/fx");
+    expect(counterpart("/", "equities")).toBe("/");
+    expect(counterpart("/", "reserves")).toBe("/reserves");
+    expect(counterpart("/prices", "reserves")).toBe("/reserves/balances");
+    expect(counterpart("/reserves/balances", "equities")).toBe("/prices");
+    expect(counterpart("/reserves/balances", "funds")).toBe("/funds/prices");
+    expect(counterpart("/reserves/catalog", "equities")).toBe("/catalog");
+    expect(counterpart("/reserves", "funds")).toBe("/funds");
     shell(<App />, "/funds");
-    await screen.findByText("Total combinado (acciones + fondos)");
+    await screen.findByText("Total combinado (acciones + fondos + reservas)");
     await user.selectOptions(screen.getByLabelText("Módulo"), "equities");
-    await screen.findByText("Total combinado (acciones + fondos)");
+    await screen.findByText("Total combinado (acciones + fondos + reservas)");
   });
 
   it("redirects the old Spanish paths", async () => {
@@ -954,5 +1033,208 @@ describe("app shell", () => {
     await waitFor(() => expect(api.instruments).toHaveBeenCalled());
     shell(<App />, "/funds");
     await waitFor(() => expect(api.wealth).toHaveBeenCalled());
+    shell(<App />, "/reserves");
+    expect(await screen.findByRole("link", { name: "Saldos" })).toBeInTheDocument();
+  });
+});
+
+describe("reserves", () => {
+  it("shows the reserve row on the summary", async () => {
+    shell(<Summary />);
+    expect(await screen.findByText("Ceiba")).toBeInTheDocument();
+    expect(screen.getByText("Pensión oficial")).toBeInTheDocument();
+    expect(screen.getByText("No líquida")).toBeInTheDocument();
+    expect(screen.getByText("2025")).toBeInTheDocument();
+    expect(screen.getByText("Dic")).toBeInTheDocument();
+    expect(screen.getByText("Yuxi")).toBeInTheDocument();
+    expect(screen.getByText("Líquida")).toBeInTheDocument();
+    expect(screen.getByText("sin saldo")).toBeInTheDocument();
+  });
+
+  it("adds, renames and deletes reserve catalog rows", async () => {
+    const user = userEvent.setup();
+    api.institutions.mockRejectedValueOnce(new Error("sin reservas"));
+    const failed = shell(<ReservesCatalog />);
+    expect(await screen.findByText("sin reservas")).toBeInTheDocument();
+    failed.unmount();
+
+    shell(<ReservesCatalog />);
+    expect((await screen.findAllByText("Protección")).length).toBeGreaterThan(0);
+    await user.type(screen.getByLabelText("Instituciones"), "Nueva");
+    await user.click(screen.getAllByRole("button", { name: "Agregar" })[0]);
+    await waitFor(() => expect(api.createInstitution).toHaveBeenCalledWith("Nueva"));
+
+    await user.type(screen.getByLabelText("Cuentas"), "MAS");
+    await user.selectOptions(screen.getByLabelText("Institución"), "81");
+    await user.selectOptions(screen.getByLabelText("Moneda de la cuenta"), "USD");
+    await user.selectOptions(screen.getByLabelText("Propósito"), "emergency");
+    expect(screen.getByRole("checkbox", { name: "Líquida" })).toBeChecked();
+    await user.selectOptions(screen.getByLabelText("Propósito"), "severance");
+    expect(screen.getByRole("checkbox", { name: "Líquida" })).not.toBeChecked();
+    await user.click(screen.getByRole("checkbox", { name: "Líquida" }));
+    await user.click(screen.getAllByRole("button", { name: "Agregar" })[1]);
+    await waitFor(() =>
+      expect(api.createReserveAccount).toHaveBeenCalledWith({
+        name: "MAS",
+        institution_id: 81,
+        currency: "USD",
+        purpose: "severance",
+        liquid: true,
+      }),
+    );
+
+    await user.click(screen.getAllByRole("button", { name: "Editar" })[0]);
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    await user.click(screen.getAllByRole("button", { name: "Editar" })[0]);
+    const same = screen.getByLabelText("Nombre");
+    await user.clear(same);
+    fireEvent.submit(same.closest("form")!);
+    await user.type(same, "Protección SA");
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    await waitFor(() => expect(api.patchInstitution).toHaveBeenCalledWith(80, "Protección SA"));
+    await user.click(screen.getAllByRole("button", { name: "Editar" })[1]);
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    await user.click(screen.getAllByRole("button", { name: "Editar" })[2]);
+    const accountDraft = screen.getByLabelText("Nombre");
+    await user.clear(accountDraft);
+    await user.type(accountDraft, "Plan Ceiba");
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    await waitFor(() => expect(api.patchReserveAccount).toHaveBeenCalledWith(70, { name: "Plan Ceiba" }));
+    await user.click(screen.getByRole("button", { name: "Inactivar" }));
+    await waitFor(() => expect(api.patchReserveAccount).toHaveBeenCalledWith(70, { active: false }));
+    await user.click(screen.getByRole("button", { name: "Marcar líquida" }));
+    await waitFor(() => expect(api.patchReserveAccount).toHaveBeenCalledWith(70, { liquid: true }));
+
+    window.confirm = vi.fn(() => false);
+    await user.click(screen.getAllByRole("button", { name: "Borrar" })[0]);
+    expect(api.deleteInstitution).not.toHaveBeenCalled();
+    vi.mocked(window.confirm).mockReturnValue(true);
+    await user.click(screen.getAllByRole("button", { name: "Borrar" })[0]);
+    await waitFor(() => expect(api.deleteInstitution).toHaveBeenCalledWith(80));
+    await user.click(screen.getAllByRole("button", { name: "Borrar" })[2]);
+    await waitFor(() => expect(api.deleteReserveAccount).toHaveBeenCalledWith(70));
+
+    api.createInstitution.mockRejectedValueOnce(new Error("inst"));
+    await user.type(screen.getByLabelText("Instituciones"), "Z");
+    await user.click(screen.getAllByRole("button", { name: "Agregar" })[0]);
+    expect(await screen.findByText("inst")).toBeInTheDocument();
+    api.createInstitution.mockRejectedValueOnce("x");
+    await user.type(screen.getByLabelText("Instituciones"), "Y");
+    await user.click(screen.getAllByRole("button", { name: "Agregar" })[0]);
+    expect(await screen.findByText("Error")).toBeInTheDocument();
+    api.createReserveAccount.mockRejectedValueOnce(new Error("cuenta"));
+    await user.type(screen.getByLabelText("Cuentas"), "Q");
+    await user.click(screen.getAllByRole("button", { name: "Agregar" })[1]);
+    expect(await screen.findByText("cuenta")).toBeInTheDocument();
+    api.patchReserveAccount.mockRejectedValueOnce(new Error("no toggle"));
+    await user.click(screen.getByRole("button", { name: "Inactivar" }));
+    expect(await screen.findByText("no toggle")).toBeInTheDocument();
+    api.patchReserveAccount.mockRejectedValueOnce("x");
+    await user.click(screen.getByRole("button", { name: "Marcar líquida" }));
+    expect(await screen.findByText("Error")).toBeInTheDocument();
+    api.patchInstitution.mockRejectedValueOnce(new Error("nombre"));
+    await user.click(screen.getAllByRole("button", { name: "Editar" })[0]);
+    const again = screen.getByLabelText("Nombre");
+    await user.clear(again);
+    await user.type(again, "Otra casa");
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    expect(await screen.findByText("nombre")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+    api.deleteReserveAccount.mockRejectedValueOnce(new Error("no borra"));
+    await user.click(screen.getAllByRole("button", { name: "Borrar" })[2]);
+    expect(await screen.findByText("no borra")).toBeInTheDocument();
+  });
+
+  it("saves one month and leaves the blank cells", async () => {
+    const user = userEvent.setup();
+    api.reserveAccounts.mockRejectedValueOnce(new Error("sin saldos"));
+    const failed = shell(<ReserveBalances />);
+    expect(await screen.findByText("sin saldos")).toBeInTheDocument();
+    failed.unmount();
+
+    api.reserveBalances.mockImplementation(async (year: number) => {
+      if (year !== 2024) return [];
+      return [
+        {
+          id: 9,
+          account_id: 70,
+          year: 2024,
+          month: 1,
+          balance: "100",
+          account_name: "Ceiba",
+          institution_name: "Protección",
+          currency: "COP" as const,
+          purpose: "official_pension" as const,
+          liquid: false,
+        },
+      ];
+    });
+    shell(<ReserveBalances />);
+    expect(await screen.findByRole("button", { name: "Guardar cambios" })).toBeInTheDocument();
+    setInput(screen.getByLabelText("Año"), "2024");
+    expect(await screen.findByDisplayValue("100")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Ceiba Ene"), { target: { value: "   " } });
+    fireEvent.change(screen.getByLabelText("Ceiba Feb"), { target: { value: "260" } });
+    await user.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    await waitFor(() =>
+      expect(api.upsertReserveBalance).toHaveBeenCalledWith({
+        account_id: 70,
+        year: 2024,
+        month: 2,
+        balance: "260",
+      }),
+    );
+    expect(api.upsertReserveBalance).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText("Saldos guardados")).toBeInTheDocument();
+    api.upsertReserveBalance.mockRejectedValueOnce(new Error("saldo"));
+    fireEvent.change(screen.getByLabelText("Ceiba Feb"), { target: { value: "1" } });
+    await user.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    expect(await screen.findByText("saldo")).toBeInTheDocument();
+    api.upsertReserveBalance.mockRejectedValueOnce("x");
+    fireEvent.change(screen.getByLabelText("Ceiba Feb"), { target: { value: "2" } });
+    await user.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    expect(await screen.findByText("Error")).toBeInTheDocument();
+    api.reserveBalances.mockRejectedValueOnce(new Error("año"));
+    setInput(screen.getByLabelText("Año"), "2023");
+    expect(await screen.findByText("año")).toBeInTheDocument();
+    const now = new Date();
+    api.reserveBalances.mockImplementation(async (selected: number) => {
+      if (selected !== now.getFullYear()) return [];
+      return [
+        {
+          id: 10,
+          account_id: 70,
+          year: now.getFullYear(),
+          month: now.getMonth() + 1,
+          balance: "5",
+          account_name: "Ceiba",
+          institution_name: "Protección",
+          currency: "COP" as const,
+          purpose: "official_pension" as const,
+          liquid: false,
+        },
+      ];
+    });
+    setInput(screen.getByLabelText("Año"), String(now.getFullYear()));
+    expect(await screen.findByDisplayValue("5")).toBeInTheDocument();
+  });
+
+  it("switches into the reserve module", async () => {
+    const user = userEvent.setup();
+    const prices = shell(<App />, "/prices");
+    await screen.findByRole("button", { name: "Guardar cambios" });
+    await user.selectOptions(screen.getByLabelText("Módulo"), "reserves");
+    await screen.findByText("Ceiba");
+    await user.click(screen.getByRole("link", { name: "Catálogo" }));
+    await screen.findByText("Instituciones");
+    await user.selectOptions(screen.getByLabelText("Módulo"), "equities");
+    await screen.findByText("Ecopetrol");
+    prices.unmount();
+
+    shell(<App />, "/reserves/catalog");
+    await screen.findByText("Ceiba");
+    await user.selectOptions(screen.getByLabelText("Módulo"), "funds");
+    await screen.findByText("FIC Uno");
   });
 });

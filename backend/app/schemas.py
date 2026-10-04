@@ -136,9 +136,20 @@ class SummaryOut(BaseModel):
     positions: list[PositionOut]
 
 
+class ReservePositionOut(PositionOut):
+    purpose: str
+    liquid: bool
+
+
+class ReserveSummaryOut(BaseModel):
+    total: VisibleDecimal | None
+    positions: list[ReservePositionOut]
+
+
 class WealthOut(BaseModel):
     equities: SummaryOut
     funds: SummaryOut
+    reserves: ReserveSummaryOut
     total: VisibleDecimal | None
 
 

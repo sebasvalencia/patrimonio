@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from app.schemas import PositionOut, SummaryOut
+from app.schemas import PositionOut, ReserveSummaryOut, SummaryOut
 
 _MIXED = "mixed"
 
@@ -42,11 +42,14 @@ def _valued_currency(positions: list[PositionOut]) -> str | None:
     return next(iter(currencies))
 
 
-def combine_native_totals(equities: SummaryOut, funds: SummaryOut) -> Decimal | None:
-    left = _valued_currency(equities.positions)
-    right = _valued_currency(funds.positions)
-    if left == _MIXED or right == _MIXED:
+def combine_native_totals(*parts: SummaryOut | ReserveSummaryOut) -> Decimal | None:
+    currencies: list[str] = []
+    for part in parts:
+        cur = _valued_currency(part.positions)
+        if cur == _MIXED:
+            return None
+        if cur is not None:
+            currencies.append(cur)
+    if len(set(currencies)) > 1:
         return None
-    if left is not None and right is not None and left != right:
-        return None
-    return (equities.total or Decimal(0)) + (funds.total or Decimal(0))
+    return sum((part.total or Decimal(0) for part in parts), Decimal(0))

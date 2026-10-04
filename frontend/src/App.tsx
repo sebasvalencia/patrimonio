@@ -13,6 +13,8 @@ import Trades from "./pages/Trades";
 import FundsCatalog from "./pages/funds/Catalog";
 import FundsPrices from "./pages/funds/Prices";
 import FundsTrades from "./pages/funds/Trades";
+import ReserveBalances from "./pages/reserves/Balances";
+import ReservesCatalog from "./pages/reserves/Catalog";
 
 const link = ({ isActive }: { isActive: boolean }) =>
   `px-3 py-2 rounded-md text-sm font-medium ${
@@ -24,26 +26,31 @@ const CURRENCIES: DisplayCurrency[] = ["COP", "USD"];
 const compactSelect =
   "rounded border border-line bg-surface-2 px-2 py-1 text-xs text-ink";
 
-export function counterpart(path: string, next: "equities" | "funds"): string {
-  let dest = path;
-  if (next === "funds" && path === "/prices") {
-    dest = "/funds/prices";
-  } else if (next === "funds" && path === "/trades") {
-    dest = "/funds/trades";
-  } else if (next === "funds" && path === "/catalog") {
-    dest = "/funds/catalog";
-  } else if (next === "funds" && path === "/") {
-    dest = "/funds";
-  } else if (next === "equities" && path === "/funds/prices") {
-    dest = "/prices";
-  } else if (next === "equities" && path === "/funds/trades") {
-    dest = "/trades";
-  } else if (next === "equities" && path === "/funds/catalog") {
-    dest = "/catalog";
-  } else if (next === "equities" && path === "/funds") {
-    dest = "/";
-  }
-  return dest;
+export type ModuleName = "equities" | "funds" | "reserves";
+
+const PAIRS: Record<string, Partial<Record<ModuleName, string>>> = {
+  "/": { funds: "/funds", reserves: "/reserves" },
+  "/funds": { equities: "/", reserves: "/reserves" },
+  "/reserves": { equities: "/", funds: "/funds" },
+  "/prices": { funds: "/funds/prices", reserves: "/reserves/balances" },
+  "/trades": { funds: "/funds/trades", reserves: "/reserves/balances" },
+  "/catalog": { funds: "/funds/catalog", reserves: "/reserves/catalog" },
+  "/funds/prices": { equities: "/prices", reserves: "/reserves/balances" },
+  "/funds/trades": { equities: "/trades", reserves: "/reserves/balances" },
+  "/funds/catalog": { equities: "/catalog", reserves: "/reserves/catalog" },
+  "/reserves/balances": { equities: "/prices", funds: "/funds/prices" },
+  "/reserves/catalog": { equities: "/catalog", funds: "/funds/catalog" },
+};
+
+export function counterpart(path: string, next: ModuleName): string {
+  const mapped = PAIRS[path]?.[next];
+  return mapped ?? path;
+}
+
+function moduleFromPath(path: string): ModuleName {
+  if (path.startsWith("/reserves")) return "reserves";
+  if (path.startsWith("/funds")) return "funds";
+  return "equities";
 }
 
 export default function App() {
@@ -52,17 +59,17 @@ export default function App() {
   const { theme, setTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
-  const [module, setModule] = useState<"equities" | "funds">(
-    location.pathname.startsWith("/funds") ? "funds" : "equities",
-  );
+  const [module, setModule] = useState<ModuleName>(moduleFromPath(location.pathname));
   const fundsMode = module === "funds";
+  const reservesMode = module === "reserves";
 
   useEffect(() => {
-    if (location.pathname.startsWith("/funds")) setModule("funds");
+    if (location.pathname.startsWith("/reserves")) setModule("reserves");
+    else if (location.pathname.startsWith("/funds")) setModule("funds");
     else if (["/prices", "/trades", "/catalog"].includes(location.pathname)) setModule("equities");
   }, [location.pathname]);
 
-  function switchModule(next: "equities" | "funds") {
+  function switchModule(next: ModuleName) {
     setModule(next);
     const dest = counterpart(location.pathname, next);
     if (dest !== location.pathname) navigate(dest);
@@ -78,19 +85,32 @@ export default function App() {
               <NavLink
                 to="/"
                 className={({ isActive }) =>
-                  link({ isActive: isActive || location.pathname === "/funds" })
+                  link({
+                    isActive: isActive || location.pathname === "/funds" || location.pathname === "/reserves",
+                  })
                 }
                 end
               >
                 {t("nav.summary")}
               </NavLink>
-              <NavLink to={fundsMode ? "/funds/prices" : "/prices"} className={link}>
-                {t("nav.prices")}
-              </NavLink>
-              <NavLink to={fundsMode ? "/funds/trades" : "/trades"} className={link}>
-                {t("nav.trades")}
-              </NavLink>
-              <NavLink to={fundsMode ? "/funds/catalog" : "/catalog"} className={link}>
+              {reservesMode ? (
+                <NavLink to="/reserves/balances" className={link}>
+                  {t("nav.balances")}
+                </NavLink>
+              ) : (
+                <>
+                  <NavLink to={fundsMode ? "/funds/prices" : "/prices"} className={link}>
+                    {t("nav.prices")}
+                  </NavLink>
+                  <NavLink to={fundsMode ? "/funds/trades" : "/trades"} className={link}>
+                    {t("nav.trades")}
+                  </NavLink>
+                </>
+              )}
+              <NavLink
+                to={reservesMode ? "/reserves/catalog" : fundsMode ? "/funds/catalog" : "/catalog"}
+                className={link}
+              >
                 {t("nav.catalog")}
               </NavLink>
               <NavLink to="/fx" className={link}>
@@ -101,10 +121,11 @@ export default function App() {
               aria-label={t("nav.module")}
               className={compactSelect}
               value={module}
-              onChange={(e) => switchModule(e.target.value as "equities" | "funds")}
+              onChange={(e) => switchModule(e.target.value as ModuleName)}
             >
               <option value="equities">{t("nav.equities")}</option>
               <option value="funds">{t("nav.funds")}</option>
+              <option value="reserves">{t("nav.reserves")}</option>
             </select>
             <select
               aria-label={t("theme.label")}
@@ -156,6 +177,9 @@ export default function App() {
           <Route path="/funds/prices" element={<FundsPrices />} />
           <Route path="/funds/trades" element={<FundsTrades />} />
           <Route path="/funds/catalog" element={<FundsCatalog />} />
+          <Route path="/reserves" element={<Summary />} />
+          <Route path="/reserves/catalog" element={<ReservesCatalog />} />
+          <Route path="/reserves/balances" element={<ReserveBalances />} />
           <Route path="/precios" element={<Navigate to="/prices" replace />} />
           <Route path="/movimientos" element={<Navigate to="/trades" replace />} />
           <Route path="/catalogo" element={<Navigate to="/catalog" replace />} />

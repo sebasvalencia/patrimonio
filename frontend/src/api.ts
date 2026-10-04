@@ -169,7 +169,40 @@ export type FundVariation = {
     variation_pct: string | null;
   }[];
 };
-export type Wealth = { equities: Summary; funds: Summary; total: string | null };
+export type ReservePurpose = "official_pension" | "severance" | "voluntary_pension" | "emergency";
+export type Institution = { id: number; name: string };
+export type ReserveAccount = {
+  id: number;
+  name: string;
+  institution_id: number;
+  institution_name: string;
+  currency: "COP" | "USD";
+  purpose: ReservePurpose;
+  liquid: boolean;
+  active: boolean;
+};
+export type ReserveBalance = {
+  id: number;
+  account_id: number;
+  year: number;
+  month: number;
+  balance: string;
+  account_name: string;
+  institution_name: string;
+  currency: "COP" | "USD";
+  purpose: ReservePurpose;
+  liquid: boolean;
+};
+export type ReservePosition = Position & {
+  purpose: ReservePurpose;
+  liquid: boolean;
+};
+export type Wealth = {
+  equities: Summary;
+  funds: Summary;
+  reserves: { total: string | null; positions: ReservePosition[] };
+  total: string | null;
+};
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -263,4 +296,26 @@ export const api = {
     req<FundTarget>("/funds/targets", { method: "PUT", body: JSON.stringify(body) }),
   fundTargetProgress: (fundId: number) =>
     req<FundTargetProgress>(`/funds/target-progress?fund_id=${fundId}`),
+  institutions: () => req<Institution[]>("/reserves/institutions"),
+  createInstitution: (name: string) =>
+    req<Institution>("/reserves/institutions", { method: "POST", body: JSON.stringify({ name }) }),
+  patchInstitution: (id: number, name: string) =>
+    req<Institution>(`/reserves/institutions/${id}`, { method: "PUT", body: JSON.stringify({ name }) }),
+  deleteInstitution: (id: number) => req<void>(`/reserves/institutions/${id}`, { method: "DELETE" }),
+  reserveAccounts: () => req<ReserveAccount[]>("/reserves/accounts"),
+  createReserveAccount: (body: {
+    name: string;
+    institution_id: number;
+    currency: "COP" | "USD";
+    purpose: ReservePurpose;
+    liquid: boolean;
+  }) => req<ReserveAccount>("/reserves/accounts", { method: "POST", body: JSON.stringify(body) }),
+  patchReserveAccount: (
+    id: number,
+    body: { active?: boolean; name?: string; liquid?: boolean; currency?: "COP" | "USD"; purpose?: ReservePurpose; institution_id?: number },
+  ) => req<ReserveAccount>(`/reserves/accounts/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  deleteReserveAccount: (id: number) => req<void>(`/reserves/accounts/${id}`, { method: "DELETE" }),
+  reserveBalances: (year: number) => req<ReserveBalance[]>(`/reserves/balances?year=${year}`),
+  upsertReserveBalance: (body: { account_id: number; year: number; month: number; balance: string }) =>
+    req<ReserveBalance>("/reserves/balances", { method: "PUT", body: JSON.stringify(body) }),
 };

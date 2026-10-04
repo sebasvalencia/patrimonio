@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.funds.routers import router as funds_router
+from app.reserves.routers import router as reserves_router
 from app.routers import brokers, fx, instruments, prices, summary, targets, trades, wealth
 
 app = FastAPI(title="Stocks", version="0.1.0")
@@ -25,6 +26,7 @@ app.include_router(targets.router)
 app.include_router(summary.router)
 app.include_router(fx.router)
 app.include_router(funds_router)
+app.include_router(reserves_router)
 app.include_router(wealth.router)
 
 

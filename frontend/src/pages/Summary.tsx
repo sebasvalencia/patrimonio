@@ -14,7 +14,7 @@ import {
   type Wealth,
 } from "../api";
 import { useCurrency } from "../currency";
-import { formatMoney } from "../format";
+import { asMoneyCurrency, formatMoney } from "../format";
 import PortfolioBlock, { useDisplayPositions } from "./PortfolioBlock";
 
 function asTarget(row: FundTarget): Target {
@@ -79,9 +79,11 @@ export default function SummaryPage() {
   const activeFd = useMemo(() => funds.filter((i) => i.active), [funds]);
   const eqDisplay = useDisplayPositions(wealth?.equities.positions ?? []);
   const fdDisplay = useDisplayPositions(wealth?.funds.positions ?? []);
+  const rsDisplay = useDisplayPositions(wealth?.reserves.positions ?? []);
   const combinedTotal =
     eqDisplay.reduce((acc, p) => acc + Number(p.valueDisplay), 0) +
-    fdDisplay.reduce((acc, p) => acc + Number(p.valueDisplay), 0);
+    fdDisplay.reduce((acc, p) => acc + Number(p.valueDisplay), 0) +
+    rsDisplay.reduce((acc, p) => acc + Number(p.valueDisplay), 0);
 
   useEffect(() => {
     Promise.all([api.wealth(), api.instruments(), api.funds()])
@@ -274,6 +276,47 @@ export default function SummaryPage() {
         onObjPrice={setFdPrice}
         onSaveTarget={saveFdTarget}
       />
+      <section className="rounded-lg bg-surface p-5 shadow-sm">
+        <h2 className="font-display text-xl">{t("reserves.summary.title")}</h2>
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="text-xs uppercase text-muted">
+              <tr>
+                <th className="py-2 pr-3">{t("reserves.summary.account")}</th>
+                <th className="py-2 pr-3">{t("reserves.summary.institution")}</th>
+                <th className="py-2 pr-3">{t("reserves.summary.purpose")}</th>
+                <th className="py-2 pr-3">{t("reserves.summary.liquidity")}</th>
+                <th className="py-2 pr-3">{t("reserves.summary.balance")}</th>
+                <th className="py-2 pr-3">{t("reserves.summary.year")}</th>
+                <th className="py-2">{t("common.month")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(wealth?.reserves.positions ?? []).map((row) => (
+                <tr key={row.instrument_id} className="border-t border-line">
+                  <td className="py-2 pr-3">{row.instrument_name}</td>
+                  <td className="py-2 pr-3">{row.broker_name}</td>
+                  <td className="py-2 pr-3">{t(`reserves.purpose.${row.purpose}`)}</td>
+                  <td className="py-2 pr-3">
+                    {row.liquid ? t("reserves.summary.liquid") : t("reserves.summary.illiquid")}
+                  </td>
+                  <td className="py-2 pr-3">
+                    {row.value == null
+                      ? t("reserves.summary.noBalance")
+                      : formatMoney(Number(row.value), asMoneyCurrency(row.instrument_currency))}
+                  </td>
+                  <td className="py-2 pr-3">{row.price_year ?? "—"}</td>
+                  <td className="py-2">
+                    {row.price_month == null
+                      ? "—"
+                      : (t("months.short", { returnObjects: true }) as string[])[row.price_month - 1]}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   );
 }

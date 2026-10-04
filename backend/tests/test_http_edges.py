@@ -274,6 +274,7 @@ def test_empty_wealth_has_no_valued_currency(client: TestClient) -> None:
     assert wealth["total"] == "0"
     assert wealth["equities"]["positions"] == []
     assert wealth["funds"]["positions"] == []
+    assert wealth["reserves"]["positions"] == []
 
 
 def test_fund_catalog_trades_and_values(client: TestClient, db: Session) -> None:

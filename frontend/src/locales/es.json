@@ -8,6 +8,8 @@
     "fx": "TRM",
     "equities": "Acciones",
     "funds": "Fondos",
+    "reserves": "Reservas",
+    "balances": "Saldos",
     "module": "Módulo"
   },
   "lang": { "label": "Idioma", "es": "Español", "en": "English", "it": "Italiano" },
@@ -73,7 +75,7 @@
     "saved": "Precios guardados"
   },
   "summary": {
-    "combined": "Total combinado (acciones + fondos)",
+    "combined": "Total combinado (acciones + fondos + reservas)",
     "equities": "Acciones",
     "funds": "Fondos",
     "total": "Total actual (títulos activos)",
@@ -137,7 +139,14 @@
     "cannotDeleteFund": "No se puede borrar: hay movimientos, valores u objetivos de este fondo",
     "cannotDeleteFundTrade": "No se puede borrar: el saldo de la fiduciaria quedaría negativo",
     "redeemExceedsBalance": "El rescate supera el saldo de esta fiduciaria",
-    "cannotChangeFundCurrency": "No se puede cambiar la moneda: el fondo ya tiene movimientos, valores u objetivos"
+    "cannotChangeFundCurrency": "No se puede cambiar la moneda: el fondo ya tiene movimientos, valores u objetivos",
+    "institutionNotFound": "Institución no encontrada",
+    "reserveAccountNotFound": "Cuenta de reserva no encontrada",
+    "institutionExists": "Ya existe una institución con ese nombre",
+    "reserveAccountExists": "Ya existe una cuenta de reserva con ese nombre",
+    "cannotDeleteInstitution": "No se puede borrar: hay cuentas en esta institución",
+    "cannotDeleteReserveAccount": "No se puede borrar: la cuenta tiene saldos",
+    "cannotChangeReserveCurrency": "No se puede cambiar la moneda: la cuenta ya tiene saldos"
   },
   "funds": {
     "catalog": {
@@ -179,6 +188,45 @@
       "saveTarget": "Guardar objetivo",
       "targetEmpty": "Falta el valor de unidad o el objetivo vigente; no se inventa el avance.",
       "targetVs": "Último valor vs objetivo vigente"
+    }
+  },
+  "reserves": {
+    "purpose": {
+      "official_pension": "Pensión oficial",
+      "severance": "Cesantías",
+      "voluntary_pension": "Pensión voluntaria",
+      "emergency": "Emergencia"
+    },
+    "catalog": {
+      "institutions": "Instituciones",
+      "accounts": "Cuentas",
+      "institution": "Institución",
+      "purpose": "Propósito",
+      "currency": "Moneda de la cuenta",
+      "liquid": "Líquida",
+      "makeLiquid": "Marcar líquida",
+      "makeIlliquid": "Marcar ilíquida",
+      "confirmDeleteInstitution": "¿Borrar la institución {{name}}?",
+      "confirmDeleteAccount": "¿Borrar la cuenta {{name}}?"
+    },
+    "balances": {
+      "title": "Saldo del extracto",
+      "balance": "Saldo",
+      "contribution": "Aporte mensual",
+      "saved": "Saldos guardados"
+    },
+    "summary": {
+      "title": "Reservas",
+      "account": "Cuenta",
+      "institution": "Institución",
+      "purpose": "Propósito",
+      "liquidity": "Liquidez",
+      "balance": "Saldo",
+      "year": "Año del saldo",
+      "contribution": "Aporte mensual",
+      "liquid": "Líquida",
+      "illiquid": "No líquida",
+      "noBalance": "sin saldo"
     }
   }
 }

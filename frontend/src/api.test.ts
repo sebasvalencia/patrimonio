@@ -98,6 +98,27 @@ describe("api", () => {
     await api.fundTargets(1);
     await api.upsertFundTarget({ fund_id: 1, year: 2026, month: 1, price: "1" });
     await api.fundTargetProgress(1);
+    await api.institutions();
+    await api.createInstitution("Protección");
+    await api.patchInstitution(1, "Protección");
+    await expect(api.deleteInstitution(1)).resolves.toBeUndefined();
+    await api.reserveAccounts();
+    await api.createReserveAccount({
+      name: "Ceiba",
+      institution_id: 1,
+      currency: "COP",
+      purpose: "official_pension",
+      liquid: false,
+    });
+    await api.patchReserveAccount(1, { active: false });
+    await expect(api.deleteReserveAccount(1)).resolves.toBeUndefined();
+    await api.reserveBalances(2024);
+    await api.upsertReserveBalance({
+      account_id: 1,
+      year: 2024,
+      month: 6,
+      balance: "100",
+    });
 
     expect(String(fetchMock.mock.calls[0][0])).toBe("http://api.test/health");
   });

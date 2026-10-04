@@ -8,6 +8,8 @@
     "fx": "FX",
     "equities": "Stocks",
     "funds": "Funds",
+    "reserves": "Reserves",
+    "balances": "Balances",
     "module": "Module"
   },
   "lang": { "label": "Language", "es": "Español", "en": "English", "it": "Italiano" },
@@ -73,7 +75,7 @@
     "saved": "Prices saved"
   },
   "summary": {
-    "combined": "Combined total (stocks + funds)",
+    "combined": "Combined total (stocks + funds + reserves)",
     "equities": "Stocks",
     "funds": "Funds",
     "total": "Current total (active holdings)",
@@ -137,7 +139,14 @@
     "cannotDeleteFund": "Cannot delete: this fund has trades, unit values, or targets",
     "cannotDeleteFundTrade": "Cannot delete: the fiduciary balance would become negative",
     "redeemExceedsBalance": "The redemption exceeds the balance at this fiduciary",
-    "cannotChangeFundCurrency": "Cannot change currency: the fund already has trades, unit values, or targets"
+    "cannotChangeFundCurrency": "Cannot change currency: the fund already has trades, unit values, or targets",
+    "institutionNotFound": "Institution not found",
+    "reserveAccountNotFound": "Reserve account not found",
+    "institutionExists": "An institution with that name already exists",
+    "reserveAccountExists": "A reserve account with that name already exists",
+    "cannotDeleteInstitution": "Cannot delete: this institution still has accounts",
+    "cannotDeleteReserveAccount": "Cannot delete: the account has balances",
+    "cannotChangeReserveCurrency": "Cannot change currency: the account already has balances"
   },
   "funds": {
     "catalog": {
@@ -179,6 +188,45 @@
       "saveTarget": "Save target",
       "targetEmpty": "Unit value or current target is missing; progress is not invented.",
       "targetVs": "Last unit value vs current target"
+    }
+  },
+  "reserves": {
+    "purpose": {
+      "official_pension": "Official pension",
+      "severance": "Severance",
+      "voluntary_pension": "Voluntary pension",
+      "emergency": "Emergency"
+    },
+    "catalog": {
+      "institutions": "Institutions",
+      "accounts": "Accounts",
+      "institution": "Institution",
+      "purpose": "Purpose",
+      "currency": "Account currency",
+      "liquid": "Liquid",
+      "makeLiquid": "Mark liquid",
+      "makeIlliquid": "Mark illiquid",
+      "confirmDeleteInstitution": "Delete institution {{name}}?",
+      "confirmDeleteAccount": "Delete account {{name}}?"
+    },
+    "balances": {
+      "title": "Statement balance",
+      "balance": "Balance",
+      "contribution": "Monthly contribution",
+      "saved": "Balances saved"
+    },
+    "summary": {
+      "title": "Reserves",
+      "account": "Account",
+      "institution": "Institution",
+      "purpose": "Purpose",
+      "liquidity": "Liquidity",
+      "balance": "Balance",
+      "year": "Balance year",
+      "contribution": "Monthly contribution",
+      "liquid": "Liquid",
+      "illiquid": "Illiquid",
+      "noBalance": "no balance"
     }
   }
 }
