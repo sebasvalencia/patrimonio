@@ -80,10 +80,12 @@ export default function SummaryPage() {
   const eqDisplay = useDisplayPositions(wealth?.equities.positions ?? []);
   const fdDisplay = useDisplayPositions(wealth?.funds.positions ?? []);
   const rsDisplay = useDisplayPositions(wealth?.reserves.positions ?? []);
+  const cdtDisplay = useDisplayPositions(wealth?.cdts.positions ?? []);
   const combinedTotal =
     eqDisplay.reduce((acc, p) => acc + Number(p.valueDisplay), 0) +
     fdDisplay.reduce((acc, p) => acc + Number(p.valueDisplay), 0) +
-    rsDisplay.reduce((acc, p) => acc + Number(p.valueDisplay), 0);
+    rsDisplay.reduce((acc, p) => acc + Number(p.valueDisplay), 0) +
+    cdtDisplay.reduce((acc, p) => acc + Number(p.valueDisplay), 0);
 
   useEffect(() => {
     Promise.all([api.wealth(), api.instruments(), api.funds()])
@@ -310,6 +312,65 @@ export default function SummaryPage() {
                     {row.price_month == null
                       ? "—"
                       : (t("months.short", { returnObjects: true }) as string[])[row.price_month - 1]}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section className="rounded-lg bg-surface p-5 shadow-sm">
+        <h2 className="font-display text-xl">{t("cdts.summary.title")}</h2>
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="text-xs uppercase text-muted">
+              <tr>
+                <th className="py-2 pr-3">{t("cdts.summary.name")}</th>
+                <th className="py-2 pr-3">{t("cdts.summary.bank")}</th>
+                <th className="py-2 pr-3">{t("cdts.summary.principal")}</th>
+                <th className="py-2 pr-3">{t("cdts.summary.rate")}</th>
+                <th className="py-2 pr-3">{t("cdts.summary.opened")}</th>
+                <th className="py-2 pr-3">{t("cdts.summary.matures")}</th>
+                <th className="py-2 pr-3">{t("cdts.summary.term")}</th>
+                <th className="py-2 pr-3">{t("cdts.summary.yieldPayment")}</th>
+                <th className="py-2 pr-3">{t("cdts.summary.frequency")}</th>
+                <th className="py-2 pr-3">{t("cdts.summary.grossYield")}</th>
+                <th className="py-2 pr-3">{t("cdts.summary.netYield")}</th>
+                <th className="py-2 pr-3">{t("cdts.summary.withholding")}</th>
+                <th className="py-2 pr-3">{t("cdts.summary.capitalize")}</th>
+                <th className="py-2 pr-3">{t("cdts.summary.status")}</th>
+                <th className="py-2">{t("cdts.summary.value")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(wealth?.cdts.positions ?? []).map((row) => (
+                <tr key={row.instrument_id} className="border-t border-line">
+                  <td className="py-2 pr-3">{row.instrument_name}</td>
+                  <td className="py-2 pr-3">{row.broker_name}</td>
+                  <td className="py-2 pr-3">
+                    {formatMoney(Number(row.balance), asMoneyCurrency(row.instrument_currency))}
+                  </td>
+                  <td className="py-2 pr-3">{row.annual_rate}%</td>
+                  <td className="py-2 pr-3">{row.opened_on}</td>
+                  <td className="py-2 pr-3">{row.matures_on}</td>
+                  <td className="py-2 pr-3">{row.term_days}</td>
+                  <td className="py-2 pr-3">{t(`cdts.yieldPayment.${row.yield_payment}`)}</td>
+                  <td className="py-2 pr-3">{t(`cdts.frequency.${row.payment_frequency}`)}</td>
+                  <td className="py-2 pr-3">
+                    {formatMoney(Number(row.gross_yield), asMoneyCurrency(row.instrument_currency))}
+                  </td>
+                  <td className="py-2 pr-3">
+                    {formatMoney(Number(row.net_yield), asMoneyCurrency(row.instrument_currency))}
+                  </td>
+                  <td className="py-2 pr-3">
+                    {formatMoney(Number(row.withholding), asMoneyCurrency(row.instrument_currency))}
+                  </td>
+                  <td className="py-2 pr-3">{row.capitalize ? t("cdts.catalog.yes") : t("cdts.catalog.no")}</td>
+                  <td className="py-2 pr-3">{t(`cdts.status.${row.status}`)}</td>
+                  <td className="py-2">
+                    {row.value == null
+                      ? t("cdts.summary.noValue")
+                      : formatMoney(Number(row.value), asMoneyCurrency(row.instrument_currency))}
                   </td>
                 </tr>
               ))}

@@ -197,10 +197,46 @@ export type ReservePosition = Position & {
   purpose: ReservePurpose;
   liquid: boolean;
 };
+export type CdtStatus = "upcoming" | "accruing" | "matured";
+export type YieldPayment = "at_maturity" | "in_advance";
+export type PaymentFrequency = "single" | "monthly" | "quarterly" | "semiannual" | "annual";
+export type Bank = { id: number; name: string };
+export type CdtCertificate = {
+  term_days: number;
+  yield_payment: YieldPayment;
+  payment_frequency: PaymentFrequency;
+  capitalize: boolean;
+  gross_yield: string;
+  net_yield: string;
+  withholding: string;
+};
+export type Cdt = {
+  id: number;
+  name: string;
+  bank_id: number;
+  bank_name: string;
+  currency: "COP" | "USD";
+  principal: string;
+  annual_rate: string;
+  opened_on: string;
+  matures_on: string;
+  active: boolean;
+  value: string | null;
+  status: CdtStatus;
+  liquid: boolean;
+} & CdtCertificate;
+export type CdtPosition = Position & {
+  annual_rate: string;
+  opened_on: string;
+  matures_on: string;
+  status: CdtStatus;
+  liquid: boolean;
+} & CdtCertificate;
 export type Wealth = {
   equities: Summary;
   funds: Summary;
   reserves: { total: string | null; positions: ReservePosition[] };
+  cdts: { total: string | null; positions: CdtPosition[] };
   total: string | null;
 };
 
@@ -318,4 +354,48 @@ export const api = {
   reserveBalances: (year: number) => req<ReserveBalance[]>(`/reserves/balances?year=${year}`),
   upsertReserveBalance: (body: { account_id: number; year: number; month: number; balance: string }) =>
     req<ReserveBalance>("/reserves/balances", { method: "PUT", body: JSON.stringify(body) }),
+  banks: () => req<Bank[]>("/cdts/banks"),
+  createBank: (name: string) =>
+    req<Bank>("/cdts/banks", { method: "POST", body: JSON.stringify({ name }) }),
+  patchBank: (id: number, name: string) =>
+    req<Bank>(`/cdts/banks/${id}`, { method: "PUT", body: JSON.stringify({ name }) }),
+  deleteBank: (id: number) => req<void>(`/cdts/banks/${id}`, { method: "DELETE" }),
+  cdts: () => req<Cdt[]>("/cdts"),
+  createCdt: (body: {
+    name: string;
+    bank_id: number;
+    currency: "COP" | "USD";
+    principal: string;
+    annual_rate: string;
+    opened_on: string;
+    matures_on: string;
+    term_days: string;
+    yield_payment: YieldPayment;
+    payment_frequency: PaymentFrequency;
+    capitalize: boolean;
+    gross_yield: string;
+    net_yield: string;
+    withholding: string;
+  }) => req<Cdt>("/cdts", { method: "POST", body: JSON.stringify(body) }),
+  patchCdt: (
+    id: number,
+    body: {
+      active?: boolean;
+      name?: string;
+      bank_id?: number;
+      currency?: "COP" | "USD";
+      principal?: string;
+      annual_rate?: string;
+      opened_on?: string;
+      matures_on?: string;
+      term_days?: number;
+      yield_payment?: YieldPayment;
+      payment_frequency?: PaymentFrequency;
+      capitalize?: boolean;
+      gross_yield?: string;
+      net_yield?: string;
+      withholding?: string;
+    },
+  ) => req<Cdt>(`/cdts/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  deleteCdt: (id: number) => req<void>(`/cdts/${id}`, { method: "DELETE" }),
 };

@@ -119,6 +119,29 @@ describe("api", () => {
       month: 6,
       balance: "100",
     });
+    await api.banks();
+    await api.createBank("Bancolombia");
+    await api.patchBank(1, "Bancolombia");
+    await expect(api.deleteBank(1)).resolves.toBeUndefined();
+    await api.cdts();
+    await api.createCdt({
+      name: "Plazo",
+      bank_id: 1,
+      currency: "COP",
+      principal: "1000",
+      annual_rate: "10",
+      opened_on: "2025-01-01",
+      matures_on: "2026-01-01",
+      term_days: "180",
+      yield_payment: "at_maturity",
+      payment_frequency: "single",
+      capitalize: true,
+      gross_yield: "186405",
+      net_yield: "178949",
+      withholding: "7456",
+    });
+    await api.patchCdt(1, { active: false });
+    await expect(api.deleteCdt(1)).resolves.toBeUndefined();
 
     expect(String(fetchMock.mock.calls[0][0])).toBe("http://api.test/health");
   });

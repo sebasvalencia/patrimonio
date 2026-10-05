@@ -9,6 +9,7 @@
     "equities": "Stocks",
     "funds": "Funds",
     "reserves": "Reserves",
+    "cdts": "CDT",
     "balances": "Balances",
     "module": "Module"
   },
@@ -75,7 +76,7 @@
     "saved": "Prices saved"
   },
   "summary": {
-    "combined": "Combined total (stocks + funds + reserves)",
+    "combined": "Combined total (stocks + funds + reserves + CDTs)",
     "equities": "Stocks",
     "funds": "Funds",
     "total": "Current total (active holdings)",
@@ -146,7 +147,13 @@
     "reserveAccountExists": "A reserve account with that name already exists",
     "cannotDeleteInstitution": "Cannot delete: this institution still has accounts",
     "cannotDeleteReserveAccount": "Cannot delete: the account has balances",
-    "cannotChangeReserveCurrency": "Cannot change currency: the account already has balances"
+    "cannotChangeReserveCurrency": "Cannot change currency: the account already has balances",
+    "bankNotFound": "Bank not found",
+    "cdtNotFound": "CDT not found",
+    "bankExists": "A bank with that name already exists",
+    "cdtExists": "A CDT with that name already exists",
+    "cannotDeleteBank": "Cannot delete: this bank still has CDTs",
+    "maturityBeforeOpening": "Maturity must be after the opening date"
   },
   "funds": {
     "catalog": {
@@ -227,6 +234,66 @@
       "liquid": "Liquid",
       "illiquid": "Illiquid",
       "noBalance": "no balance"
+    }
+  },
+  "cdts": {
+    "status": {
+      "upcoming": "Not started",
+      "accruing": "Accruing",
+      "matured": "Matured"
+    },
+    "yieldPayment": {
+      "at_maturity": "At maturity",
+      "in_advance": "In advance"
+    },
+    "frequency": {
+      "single": "Single payment",
+      "monthly": "Monthly",
+      "quarterly": "Quarterly",
+      "semiannual": "Semiannual",
+      "annual": "Annual"
+    },
+    "catalog": {
+      "banks": "Banks",
+      "bankName": "Bank name",
+      "deposits": "CDTs",
+      "bank": "Bank",
+      "currency": "CDT currency",
+      "name": "CDT name",
+      "principal": "Investment amount",
+      "rate": "Effective annual rate (%)",
+      "opened": "Opening date",
+      "matures": "Maturity date",
+      "term": "Term (days)",
+      "yieldPayment": "Yield payment mode",
+      "grossYield": "Last period yield",
+      "capitalize": "Yield capitalization",
+      "frequency": "Yield payment frequency",
+      "netYield": "Last period net yield",
+      "withholding": "Withholding tax",
+      "yes": "Yes",
+      "no": "No",
+      "confirmDeleteBank": "Delete bank {{name}}?",
+      "confirmDeleteCdt": "Delete CDT {{name}}?"
+    },
+    "summary": {
+      "title": "CDTs",
+      "name": "CDT",
+      "bank": "Bank",
+      "principal": "Investment amount",
+      "rate": "EA rate",
+      "opened": "Opening",
+      "matures": "Maturity",
+      "term": "Term (days)",
+      "yieldPayment": "Payment mode",
+      "frequency": "Frequency",
+      "grossYield": "Yield",
+      "netYield": "Net yield",
+      "withholding": "Withholding",
+      "capitalize": "Capitalizes",
+      "status": "Status",
+      "value": "Value",
+      "noValue": "no value"
     }
   }
 }

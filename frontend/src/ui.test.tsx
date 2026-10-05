@@ -18,6 +18,7 @@ import FundsPrices from "./pages/funds/Prices";
 import FundsTrades from "./pages/funds/Trades";
 import ReserveBalances from "./pages/reserves/Balances";
 import ReservesCatalog from "./pages/reserves/Catalog";
+import CdtsCatalog from "./pages/cdts/Catalog";
 import { applyTheme, chartTheme, readTheme, ThemeProvider, useTheme } from "./theme";
 import i18n from "./i18n";
 
@@ -79,6 +80,14 @@ const api = vi.hoisted(() => ({
   deleteReserveAccount: vi.fn(),
   reserveBalances: vi.fn(),
   upsertReserveBalance: vi.fn(),
+  banks: vi.fn(),
+  createBank: vi.fn(),
+  patchBank: vi.fn(),
+  deleteBank: vi.fn(),
+  cdts: vi.fn(),
+  createCdt: vi.fn(),
+  patchCdt: vi.fn(),
+  deleteCdt: vi.fn(),
 }));
 
 vi.mock("./api", () => ({ api }));
@@ -280,6 +289,54 @@ beforeEach(async () => {
         },
       ],
     },
+    cdts: {
+      total: "1100",
+      positions: [
+        {
+          ...copPosition,
+          instrument_id: 92,
+          instrument_name: "Plazo",
+          broker_id: 90,
+          broker_name: "Bancolombia",
+          balance: "1000",
+          last_price: null,
+          price_year: 2026,
+          price_month: 1,
+          value: "1100",
+          annual_rate: "10",
+          opened_on: "2025-01-01",
+          matures_on: "2026-01-01",
+          term_days: 365,
+          yield_payment: "at_maturity" as const,
+          payment_frequency: "single" as const,
+          capitalize: true,
+          gross_yield: "186405",
+          net_yield: "178949",
+          withholding: "7456",
+          status: "matured" as const,
+          liquid: true,
+        },
+        {
+          ...missingPosition,
+          instrument_id: 93,
+          instrument_name: "Futuro",
+          broker_name: "Davivienda",
+          balance: "200",
+          annual_rate: "5",
+          opened_on: "2026-08-01",
+          matures_on: "2027-08-01",
+          term_days: 365,
+          yield_payment: "in_advance" as const,
+          payment_frequency: "monthly" as const,
+          capitalize: false,
+          gross_yield: "0",
+          net_yield: "0",
+          withholding: "0",
+          status: "upcoming" as const,
+          liquid: false,
+        },
+      ],
+    },
   });
   api.institutions.mockResolvedValue([institution, otherInstitution]);
   api.reserveAccounts.mockResolvedValue([ceiba, apnea]);
@@ -291,6 +348,62 @@ beforeEach(async () => {
   api.patchReserveAccount.mockResolvedValue(ceiba);
   api.deleteReserveAccount.mockResolvedValue(undefined);
   api.upsertReserveBalance.mockResolvedValue({ id: 9 });
+  api.banks.mockResolvedValue([
+    { id: 90, name: "Bancolombia" },
+    { id: 91, name: "Davivienda" },
+  ]);
+  api.cdts.mockResolvedValue([
+    {
+      id: 92,
+      name: "Plazo",
+      bank_id: 90,
+      bank_name: "Bancolombia",
+      currency: "COP" as const,
+      principal: "1000",
+      annual_rate: "10",
+      opened_on: "2025-01-01",
+      matures_on: "2026-01-01",
+      term_days: 365,
+      yield_payment: "at_maturity" as const,
+      payment_frequency: "single" as const,
+      capitalize: true,
+      gross_yield: "186405",
+      net_yield: "178949",
+      withholding: "7456",
+      active: true,
+      value: "1100",
+      status: "matured" as const,
+      liquid: true,
+    },
+    {
+      id: 93,
+      name: "Futuro",
+      bank_id: 91,
+      bank_name: "Davivienda",
+      currency: "COP" as const,
+      principal: "200",
+      annual_rate: "5",
+      opened_on: "2026-08-01",
+      matures_on: "2027-08-01",
+      term_days: 365,
+      yield_payment: "in_advance" as const,
+      payment_frequency: "monthly" as const,
+      capitalize: false,
+      gross_yield: "0",
+      net_yield: "0",
+      withholding: "0",
+      active: false,
+      value: null,
+      status: "upcoming" as const,
+      liquid: false,
+    },
+  ]);
+  api.createBank.mockResolvedValue({ id: 90, name: "Bancolombia" });
+  api.patchBank.mockResolvedValue({ id: 90, name: "Bancolombia" });
+  api.deleteBank.mockResolvedValue(undefined);
+  api.createCdt.mockResolvedValue({ id: 92, name: "Plazo" });
+  api.patchCdt.mockResolvedValue({ id: 92, name: "Plazo" });
+  api.deleteCdt.mockResolvedValue(undefined);
   api.funds.mockResolvedValue([fund, { ...fund, id: 6, name: "FIC Off", active: false }]);
   api.fiduciaries.mockResolvedValue([fiduciary]);
   api.fundTrades.mockResolvedValue([
@@ -955,6 +1068,7 @@ describe("summary block", () => {
       equities: { total: "0", positions: [] },
       funds: { total: "0", positions: [] },
       reserves: { total: "0", positions: [] },
+      cdts: { total: "0", positions: [] },
     });
     shell(<Summary />);
     await waitFor(() => expect(api.wealth).toHaveBeenCalled());
@@ -1018,10 +1132,28 @@ describe("app shell", () => {
     expect(counterpart("/reserves/balances", "funds")).toBe("/funds/prices");
     expect(counterpart("/reserves/catalog", "equities")).toBe("/catalog");
     expect(counterpart("/reserves", "funds")).toBe("/funds");
+    expect(counterpart("/", "cdts")).toBe("/cdts");
+    expect(counterpart("/prices", "cdts")).toBe("/cdts/catalog");
+    expect(counterpart("/trades", "cdts")).toBe("/cdts/catalog");
+    expect(counterpart("/catalog", "cdts")).toBe("/cdts/catalog");
+    expect(counterpart("/funds", "cdts")).toBe("/cdts");
+    expect(counterpart("/funds/prices", "cdts")).toBe("/cdts/catalog");
+    expect(counterpart("/funds/trades", "cdts")).toBe("/cdts/catalog");
+    expect(counterpart("/funds/catalog", "cdts")).toBe("/cdts/catalog");
+    expect(counterpart("/reserves", "cdts")).toBe("/cdts");
+    expect(counterpart("/reserves/balances", "cdts")).toBe("/cdts/catalog");
+    expect(counterpart("/reserves/catalog", "cdts")).toBe("/cdts/catalog");
+    expect(counterpart("/cdts", "equities")).toBe("/");
+    expect(counterpart("/cdts", "funds")).toBe("/funds");
+    expect(counterpart("/cdts", "reserves")).toBe("/reserves");
+    expect(counterpart("/cdts/catalog", "equities")).toBe("/catalog");
+    expect(counterpart("/cdts/catalog", "funds")).toBe("/funds/catalog");
+    expect(counterpart("/cdts/catalog", "reserves")).toBe("/reserves/catalog");
+    expect(counterpart("/fx", "cdts")).toBe("/fx");
     shell(<App />, "/funds");
-    await screen.findByText("Total combinado (acciones + fondos + reservas)");
+    await screen.findByText("Total combinado (acciones + fondos + reservas + CDTs)");
     await user.selectOptions(screen.getByLabelText("Módulo"), "equities");
-    await screen.findByText("Total combinado (acciones + fondos + reservas)");
+    await screen.findByText("Total combinado (acciones + fondos + reservas + CDTs)");
   });
 
   it("redirects the old Spanish paths", async () => {
@@ -1234,6 +1366,164 @@ describe("reserves", () => {
 
     shell(<App />, "/reserves/catalog");
     await screen.findByText("Ceiba");
+    await user.selectOptions(screen.getByLabelText("Módulo"), "funds");
+    await screen.findByText("FIC Uno");
+  });
+});
+
+describe("cdts", () => {
+  it("shows the cdt row on the summary", async () => {
+    shell(<Summary />);
+    expect(await screen.findByText("Plazo")).toBeInTheDocument();
+    expect(screen.getAllByText("Vencido").length).toBeGreaterThan(0);
+    expect(screen.getByText("Futuro")).toBeInTheDocument();
+    expect(screen.getByText("Por abrir")).toBeInTheDocument();
+    expect(screen.getByText("sin valor")).toBeInTheDocument();
+    expect(screen.getByText("10%")).toBeInTheDocument();
+    expect(screen.getByText("2025-01-01")).toBeInTheDocument();
+  });
+
+  it("adds, renames and deletes cdt catalog rows", async () => {
+    const user = userEvent.setup();
+    api.banks.mockRejectedValueOnce(new Error("sin cdts"));
+    const failed = shell(<CdtsCatalog />);
+    expect(await screen.findByText("sin cdts")).toBeInTheDocument();
+    failed.unmount();
+
+    api.banks.mockResolvedValueOnce([]);
+    api.cdts.mockResolvedValueOnce([]);
+    const empty = shell(<CdtsCatalog />);
+    expect(await screen.findByText("CDTs")).toBeInTheDocument();
+    fireEvent.submit(screen.getAllByRole("button", { name: "Agregar" })[1].closest("form")!);
+    expect(api.createCdt).not.toHaveBeenCalled();
+    empty.unmount();
+
+    shell(<CdtsCatalog />);
+    expect((await screen.findAllByText("Bancolombia")).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Vencido/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/sin valor/)).toBeInTheDocument();
+    expect(screen.getByText("Activar")).toBeInTheDocument();
+    await user.type(screen.getByLabelText("Bancos"), "Nuevo");
+    await user.click(screen.getAllByRole("button", { name: "Agregar" })[0]);
+    await waitFor(() => expect(api.createBank).toHaveBeenCalledWith("Nuevo"));
+
+    await user.type(screen.getByLabelText("CDTs"), "Marzo");
+    await user.selectOptions(screen.getByLabelText("Banco"), "91");
+    await user.selectOptions(screen.getByLabelText("Moneda del CDT"), "USD");
+    fireEvent.change(screen.getByLabelText("Valor inversión"), { target: { value: "500" } });
+    fireEvent.change(screen.getByLabelText("Tasa efectiva anual (%)"), { target: { value: "9.5" } });
+    fireEvent.change(screen.getByLabelText("Plazo (días)"), { target: { value: "180" } });
+    fireEvent.change(screen.getByLabelText("Fecha de apertura"), { target: { value: "2025-03-01" } });
+    fireEvent.change(screen.getByLabelText("Fecha de vencimiento"), { target: { value: "2026-03-01" } });
+    await user.selectOptions(screen.getByLabelText("Modalidad pago rendimientos"), "in_advance");
+    await user.selectOptions(screen.getByLabelText("Periodicidad de pago de rendimientos"), "monthly");
+    fireEvent.change(screen.getByLabelText("Rendimientos último periodo"), { target: { value: "186405" } });
+    fireEvent.change(screen.getByLabelText("Rendimientos netos último periodo"), { target: { value: "178949" } });
+    fireEvent.change(screen.getByLabelText("Retención en la fuente"), { target: { value: "7456" } });
+    await user.click(screen.getByRole("checkbox", { name: "Capitalización de rendimientos" }));
+    await user.click(screen.getAllByRole("button", { name: "Agregar" })[1]);
+    await waitFor(() =>
+      expect(api.createCdt).toHaveBeenCalledWith({
+        name: "Marzo",
+        bank_id: 91,
+        currency: "USD",
+        principal: "500",
+        annual_rate: "9.5",
+        opened_on: "2025-03-01",
+        matures_on: "2026-03-01",
+        term_days: "180",
+        yield_payment: "in_advance",
+        payment_frequency: "monthly",
+        capitalize: true,
+        gross_yield: "186405",
+        net_yield: "178949",
+        withholding: "7456",
+      }),
+    );
+
+    await user.click(screen.getAllByRole("button", { name: "Editar" })[0]);
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    await user.click(screen.getAllByRole("button", { name: "Editar" })[0]);
+    const same = screen.getByLabelText("Nombre");
+    await user.clear(same);
+    fireEvent.submit(same.closest("form")!);
+    await user.type(same, "Bancolombia SA");
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    await waitFor(() => expect(api.patchBank).toHaveBeenCalledWith(90, "Bancolombia SA"));
+    await user.click(screen.getAllByRole("button", { name: "Editar" })[1]);
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    await user.click(screen.getAllByRole("button", { name: "Editar" })[2]);
+    const cdtDraft = screen.getByLabelText("Nombre");
+    await user.clear(cdtDraft);
+    await user.type(cdtDraft, "Plazo largo");
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    await waitFor(() => expect(api.patchCdt).toHaveBeenCalledWith(92, { name: "Plazo largo" }));
+    await user.click(screen.getByRole("button", { name: "Inactivar" }));
+    await waitFor(() => expect(api.patchCdt).toHaveBeenCalledWith(92, { active: false }));
+
+    window.confirm = vi.fn(() => false);
+    await user.click(screen.getAllByRole("button", { name: "Borrar" })[0]);
+    expect(api.deleteBank).not.toHaveBeenCalled();
+    vi.mocked(window.confirm).mockReturnValue(true);
+    await user.click(screen.getAllByRole("button", { name: "Borrar" })[0]);
+    await waitFor(() => expect(api.deleteBank).toHaveBeenCalledWith(90));
+    await user.click(screen.getAllByRole("button", { name: "Borrar" })[2]);
+    await waitFor(() => expect(api.deleteCdt).toHaveBeenCalledWith(92));
+
+    api.createBank.mockRejectedValueOnce(new Error("banco"));
+    await user.type(screen.getByLabelText("Bancos"), "Z");
+    await user.click(screen.getAllByRole("button", { name: "Agregar" })[0]);
+    expect(await screen.findByText("banco")).toBeInTheDocument();
+    api.createBank.mockRejectedValueOnce("x");
+    await user.type(screen.getByLabelText("Bancos"), "Y");
+    await user.click(screen.getAllByRole("button", { name: "Agregar" })[0]);
+    expect(await screen.findByText("Error")).toBeInTheDocument();
+    api.createCdt.mockRejectedValueOnce(new Error("cdt"));
+    await user.type(screen.getByLabelText("CDTs"), "Q");
+    fireEvent.change(screen.getByLabelText("Valor inversión"), { target: { value: "1" } });
+    fireEvent.change(screen.getByLabelText("Tasa efectiva anual (%)"), { target: { value: "1" } });
+    fireEvent.change(screen.getByLabelText("Plazo (días)"), { target: { value: "30" } });
+    fireEvent.change(screen.getByLabelText("Fecha de apertura"), { target: { value: "2025-01-01" } });
+    fireEvent.change(screen.getByLabelText("Fecha de vencimiento"), { target: { value: "2026-01-01" } });
+    await user.click(screen.getAllByRole("button", { name: "Agregar" })[1]);
+    expect(await screen.findByText("cdt")).toBeInTheDocument();
+    api.patchCdt.mockRejectedValueOnce(new Error("no toggle"));
+    await user.click(screen.getByRole("button", { name: "Inactivar" }));
+    expect(await screen.findByText("no toggle")).toBeInTheDocument();
+    api.patchBank.mockRejectedValueOnce(new Error("nombre"));
+    await user.click(screen.getAllByRole("button", { name: "Editar" })[0]);
+    const again = screen.getByLabelText("Nombre");
+    await user.clear(again);
+    await user.type(again, "Otra banco");
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    expect(await screen.findByText("nombre")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+    api.deleteCdt.mockRejectedValueOnce(new Error("no borra"));
+    await user.click(screen.getAllByRole("button", { name: "Borrar" })[2]);
+    expect(await screen.findByText("no borra")).toBeInTheDocument();
+    api.deleteCdt.mockRejectedValueOnce("x");
+    await user.click(screen.getAllByRole("button", { name: "Borrar" })[2]);
+    expect(await screen.findByText("Error")).toBeInTheDocument();
+  });
+
+  it("switches into the cdt module", async () => {
+    const user = userEvent.setup();
+    const book = shell(<App />, "/cdts");
+    expect(await screen.findByText("Plazo")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Resumen" })).toHaveClass("bg-accent");
+    expect(screen.queryByRole("link", { name: "Precios" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Saldos" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("link", { name: "Catálogo" }));
+    await screen.findByText("Bancos");
+    await user.selectOptions(screen.getByLabelText("Módulo"), "equities");
+    await screen.findByText("Ecopetrol");
+    book.unmount();
+
+    shell(<App />, "/prices");
+    await screen.findByRole("button", { name: "Guardar cambios" });
+    await user.selectOptions(screen.getByLabelText("Módulo"), "cdts");
+    await screen.findByText("Bancos");
     await user.selectOptions(screen.getByLabelText("Módulo"), "funds");
     await screen.findByText("FIC Uno");
   });

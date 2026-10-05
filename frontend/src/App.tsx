@@ -15,6 +15,7 @@ import FundsPrices from "./pages/funds/Prices";
 import FundsTrades from "./pages/funds/Trades";
 import ReserveBalances from "./pages/reserves/Balances";
 import ReservesCatalog from "./pages/reserves/Catalog";
+import CdtsCatalog from "./pages/cdts/Catalog";
 
 const link = ({ isActive }: { isActive: boolean }) =>
   `px-3 py-2 rounded-md text-sm font-medium ${
@@ -26,20 +27,22 @@ const CURRENCIES: DisplayCurrency[] = ["COP", "USD"];
 const compactSelect =
   "rounded border border-line bg-surface-2 px-2 py-1 text-xs text-ink";
 
-export type ModuleName = "equities" | "funds" | "reserves";
+export type ModuleName = "equities" | "funds" | "reserves" | "cdts";
 
 const PAIRS: Record<string, Partial<Record<ModuleName, string>>> = {
-  "/": { funds: "/funds", reserves: "/reserves" },
-  "/funds": { equities: "/", reserves: "/reserves" },
-  "/reserves": { equities: "/", funds: "/funds" },
-  "/prices": { funds: "/funds/prices", reserves: "/reserves/balances" },
-  "/trades": { funds: "/funds/trades", reserves: "/reserves/balances" },
-  "/catalog": { funds: "/funds/catalog", reserves: "/reserves/catalog" },
-  "/funds/prices": { equities: "/prices", reserves: "/reserves/balances" },
-  "/funds/trades": { equities: "/trades", reserves: "/reserves/balances" },
-  "/funds/catalog": { equities: "/catalog", reserves: "/reserves/catalog" },
-  "/reserves/balances": { equities: "/prices", funds: "/funds/prices" },
-  "/reserves/catalog": { equities: "/catalog", funds: "/funds/catalog" },
+  "/": { funds: "/funds", reserves: "/reserves", cdts: "/cdts" },
+  "/funds": { equities: "/", reserves: "/reserves", cdts: "/cdts" },
+  "/reserves": { equities: "/", funds: "/funds", cdts: "/cdts" },
+  "/cdts": { equities: "/", funds: "/funds", reserves: "/reserves" },
+  "/prices": { funds: "/funds/prices", reserves: "/reserves/balances", cdts: "/cdts/catalog" },
+  "/trades": { funds: "/funds/trades", reserves: "/reserves/balances", cdts: "/cdts/catalog" },
+  "/catalog": { funds: "/funds/catalog", reserves: "/reserves/catalog", cdts: "/cdts/catalog" },
+  "/funds/prices": { equities: "/prices", reserves: "/reserves/balances", cdts: "/cdts/catalog" },
+  "/funds/trades": { equities: "/trades", reserves: "/reserves/balances", cdts: "/cdts/catalog" },
+  "/funds/catalog": { equities: "/catalog", reserves: "/reserves/catalog", cdts: "/cdts/catalog" },
+  "/reserves/balances": { equities: "/prices", funds: "/funds/prices", cdts: "/cdts/catalog" },
+  "/reserves/catalog": { equities: "/catalog", funds: "/funds/catalog", cdts: "/cdts/catalog" },
+  "/cdts/catalog": { equities: "/catalog", funds: "/funds/catalog", reserves: "/reserves/catalog" },
 };
 
 export function counterpart(path: string, next: ModuleName): string {
@@ -48,6 +51,7 @@ export function counterpart(path: string, next: ModuleName): string {
 }
 
 function moduleFromPath(path: string): ModuleName {
+  if (path.startsWith("/cdts")) return "cdts";
   if (path.startsWith("/reserves")) return "reserves";
   if (path.startsWith("/funds")) return "funds";
   return "equities";
@@ -62,9 +66,11 @@ export default function App() {
   const [module, setModule] = useState<ModuleName>(moduleFromPath(location.pathname));
   const fundsMode = module === "funds";
   const reservesMode = module === "reserves";
+  const cdtsMode = module === "cdts";
 
   useEffect(() => {
-    if (location.pathname.startsWith("/reserves")) setModule("reserves");
+    if (location.pathname.startsWith("/cdts")) setModule("cdts");
+    else if (location.pathname.startsWith("/reserves")) setModule("reserves");
     else if (location.pathname.startsWith("/funds")) setModule("funds");
     else if (["/prices", "/trades", "/catalog"].includes(location.pathname)) setModule("equities");
   }, [location.pathname]);
@@ -86,14 +92,18 @@ export default function App() {
                 to="/"
                 className={({ isActive }) =>
                   link({
-                    isActive: isActive || location.pathname === "/funds" || location.pathname === "/reserves",
+                    isActive:
+                      isActive ||
+                      location.pathname === "/funds" ||
+                      location.pathname === "/reserves" ||
+                      location.pathname === "/cdts",
                   })
                 }
                 end
               >
                 {t("nav.summary")}
               </NavLink>
-              {reservesMode ? (
+              {cdtsMode ? null : reservesMode ? (
                 <NavLink to="/reserves/balances" className={link}>
                   {t("nav.balances")}
                 </NavLink>
@@ -108,7 +118,15 @@ export default function App() {
                 </>
               )}
               <NavLink
-                to={reservesMode ? "/reserves/catalog" : fundsMode ? "/funds/catalog" : "/catalog"}
+                to={
+                  cdtsMode
+                    ? "/cdts/catalog"
+                    : reservesMode
+                      ? "/reserves/catalog"
+                      : fundsMode
+                        ? "/funds/catalog"
+                        : "/catalog"
+                }
                 className={link}
               >
                 {t("nav.catalog")}
@@ -126,6 +144,7 @@ export default function App() {
               <option value="equities">{t("nav.equities")}</option>
               <option value="funds">{t("nav.funds")}</option>
               <option value="reserves">{t("nav.reserves")}</option>
+              <option value="cdts">{t("nav.cdts")}</option>
             </select>
             <select
               aria-label={t("theme.label")}
@@ -180,6 +199,8 @@ export default function App() {
           <Route path="/reserves" element={<Summary />} />
           <Route path="/reserves/catalog" element={<ReservesCatalog />} />
           <Route path="/reserves/balances" element={<ReserveBalances />} />
+          <Route path="/cdts" element={<Summary />} />
+          <Route path="/cdts/catalog" element={<CdtsCatalog />} />
           <Route path="/precios" element={<Navigate to="/prices" replace />} />
           <Route path="/movimientos" element={<Navigate to="/trades" replace />} />
           <Route path="/catalogo" element={<Navigate to="/catalog" replace />} />

@@ -1,3 +1,4 @@
+from datetime import date
 from decimal import Decimal
 from typing import Annotated, Literal
 
@@ -146,10 +147,31 @@ class ReserveSummaryOut(BaseModel):
     positions: list[ReservePositionOut]
 
 
+class CdtPositionOut(PositionOut):
+    annual_rate: VisibleDecimal
+    opened_on: date
+    matures_on: date
+    term_days: int
+    yield_payment: str
+    payment_frequency: str
+    capitalize: bool
+    gross_yield: VisibleDecimal
+    net_yield: VisibleDecimal
+    withholding: VisibleDecimal
+    status: str
+    liquid: bool
+
+
+class CdtSummaryOut(BaseModel):
+    total: VisibleDecimal | None
+    positions: list[CdtPositionOut]
+
+
 class WealthOut(BaseModel):
     equities: SummaryOut
     funds: SummaryOut
     reserves: ReserveSummaryOut
+    cdts: CdtSummaryOut
     total: VisibleDecimal | None
 
 

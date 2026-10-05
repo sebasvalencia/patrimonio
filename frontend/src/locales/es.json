@@ -9,6 +9,7 @@
     "equities": "Acciones",
     "funds": "Fondos",
     "reserves": "Reservas",
+    "cdts": "CDT",
     "balances": "Saldos",
     "module": "Módulo"
   },
@@ -75,7 +76,7 @@
     "saved": "Precios guardados"
   },
   "summary": {
-    "combined": "Total combinado (acciones + fondos + reservas)",
+    "combined": "Total combinado (acciones + fondos + reservas + CDTs)",
     "equities": "Acciones",
     "funds": "Fondos",
     "total": "Total actual (títulos activos)",
@@ -146,7 +147,13 @@
     "reserveAccountExists": "Ya existe una cuenta de reserva con ese nombre",
     "cannotDeleteInstitution": "No se puede borrar: hay cuentas en esta institución",
     "cannotDeleteReserveAccount": "No se puede borrar: la cuenta tiene saldos",
-    "cannotChangeReserveCurrency": "No se puede cambiar la moneda: la cuenta ya tiene saldos"
+    "cannotChangeReserveCurrency": "No se puede cambiar la moneda: la cuenta ya tiene saldos",
+    "bankNotFound": "Banco no encontrado",
+    "cdtNotFound": "CDT no encontrado",
+    "bankExists": "Ya existe un banco con ese nombre",
+    "cdtExists": "Ya existe un CDT con ese nombre",
+    "cannotDeleteBank": "No se puede borrar: este banco todavía tiene CDTs",
+    "maturityBeforeOpening": "El vencimiento tiene que ser posterior a la apertura"
   },
   "funds": {
     "catalog": {
@@ -227,6 +234,66 @@
       "liquid": "Líquida",
       "illiquid": "No líquida",
       "noBalance": "sin saldo"
+    }
+  },
+  "cdts": {
+    "status": {
+      "upcoming": "Por abrir",
+      "accruing": "Vigente",
+      "matured": "Vencido"
+    },
+    "yieldPayment": {
+      "at_maturity": "Vencido",
+      "in_advance": "Anticipado"
+    },
+    "frequency": {
+      "single": "Único pago",
+      "monthly": "Mensual",
+      "quarterly": "Trimestral",
+      "semiannual": "Semestral",
+      "annual": "Anual"
+    },
+    "catalog": {
+      "banks": "Bancos",
+      "bankName": "Nombre del banco",
+      "deposits": "CDTs",
+      "bank": "Banco",
+      "currency": "Moneda del CDT",
+      "name": "Nombre del CDT",
+      "principal": "Valor inversión",
+      "rate": "Tasa efectiva anual (%)",
+      "opened": "Fecha de apertura",
+      "matures": "Fecha de vencimiento",
+      "term": "Plazo (días)",
+      "yieldPayment": "Modalidad pago rendimientos",
+      "grossYield": "Rendimientos último periodo",
+      "capitalize": "Capitalización de rendimientos",
+      "frequency": "Periodicidad de pago de rendimientos",
+      "netYield": "Rendimientos netos último periodo",
+      "withholding": "Retención en la fuente",
+      "yes": "Sí",
+      "no": "No",
+      "confirmDeleteBank": "¿Borrar el banco {{name}}?",
+      "confirmDeleteCdt": "¿Borrar el CDT {{name}}?"
+    },
+    "summary": {
+      "title": "CDTs",
+      "name": "CDT",
+      "bank": "Banco",
+      "principal": "Valor inversión",
+      "rate": "Tasa EA",
+      "opened": "Apertura",
+      "matures": "Vencimiento",
+      "term": "Plazo (días)",
+      "yieldPayment": "Modalidad",
+      "frequency": "Periodicidad",
+      "grossYield": "Rendimientos",
+      "netYield": "Rendimientos netos",
+      "withholding": "Retención",
+      "capitalize": "Capitaliza",
+      "status": "Estado",
+      "value": "Valor",
+      "noValue": "sin valor"
     }
   }
 }

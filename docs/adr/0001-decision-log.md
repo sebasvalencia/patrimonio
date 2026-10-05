@@ -158,3 +158,19 @@ A bank account with deposits and withdrawals is out of this slice.
 Each account has one balance per month, typed in a year grid the same way a fund unit value is typed. An empty cell is left alone. Saving a month updates that cell and leaves the other months and years in place. A balance that was stored as a whole year before this change is kept as December of that year.
 
 The value in the wealth total is the balance of the latest month that has a row. If the current month is empty, the previous month still counts. The client converts that balance with the TRM of that same month. The summary shows the year and the month of the balance. It no longer stores a separate monthly contribution.
+
+## 0022. A CDT is a calculated term deposit, not a reserve
+
+- Status: Accepted
+
+A CDT is a fourth book. It is not an equity, a fund, or a reserve account. A bank has deposits. Each deposit stores a name, a currency, the principal, an effective annual rate, an opening date, and a maturity date. There is no monthly balance to type.
+
+The value is principal times `(1 + rate/100) ^ (days/365)`, rounded to cents. Days run from the opening date to the earlier of today and the maturity date. Before the opening date the deposit stays in the list with no value and stays out of the total. On the opening date the value is the principal. From the maturity date onward the value stays at the full term and the deposit is liquid. Until then it is illiquid. Marking it inactive (the cash has been collected) removes it from the summary. Deleting a bank that still has deposits returns 409. A deposit itself can be deleted. The seed does not invent banks or deposits.
+
+The client converts a valued deposit with the TRM of the month used in that calculation: the opening month, the current month, or the maturity month. Withholding tax, early withdrawal, and a nominal rate are out of this slice. The combined total still requires one currency across every valued position.
+
+## 0023. A CDT also stores the bank certificate
+
+- Status: Accepted
+
+The calculated value from 0022 stays the number in the wealth total. The certificate is stored beside it: term in days, yield payment mode (`at_maturity` or `in_advance`), payment frequency, whether the yield is capitalized, last-period gross yield, net yield, and withholding. If the term is left empty, it is the number of days between the opening date and the maturity date. The form shows a name on every field. These amounts are what the bank reported. They do not replace the calculated value.

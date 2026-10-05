@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from app.schemas import PositionOut, ReserveSummaryOut, SummaryOut
+from app.schemas import CdtSummaryOut, PositionOut, ReserveSummaryOut, SummaryOut
 
 _MIXED = "mixed"
 
@@ -42,7 +42,7 @@ def _valued_currency(positions: list[PositionOut]) -> str | None:
     return next(iter(currencies))
 
 
-def combine_native_totals(*parts: SummaryOut | ReserveSummaryOut) -> Decimal | None:
+def combine_native_totals(*parts: SummaryOut | ReserveSummaryOut | CdtSummaryOut) -> Decimal | None:
     currencies: list[str] = []
     for part in parts:
         cur = _valued_currency(part.positions)

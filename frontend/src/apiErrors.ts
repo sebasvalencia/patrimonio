@@ -52,6 +52,12 @@ const EXACT: Record<string, string> = {
   cannot_delete_institution: "errors.cannotDeleteInstitution",
   cannot_delete_reserve_account: "errors.cannotDeleteReserveAccount",
   cannot_change_reserve_currency: "errors.cannotChangeReserveCurrency",
+  bank_not_found: "errors.bankNotFound",
+  cdt_not_found: "errors.cdtNotFound",
+  bank_exists: "errors.bankExists",
+  cdt_exists: "errors.cdtExists",
+  cannot_delete_bank: "errors.cannotDeleteBank",
+  maturity_before_opening: "errors.maturityBeforeOpening",
 };
 
 export function translateApiError(msg: string): string {
