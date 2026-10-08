@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.assets.routers import router as assets_router
 from app.cdts.routers import router as cdts_router
 from app.funds.routers import router as funds_router
 from app.reserves.routers import router as reserves_router
@@ -29,6 +30,7 @@ app.include_router(fx.router)
 app.include_router(funds_router)
 app.include_router(reserves_router)
 app.include_router(cdts_router)
+app.include_router(assets_router)
 app.include_router(wealth.router)
 
 

@@ -1,5 +1,5 @@
 {
-  "app": { "title": "STOCKS", "documentTitle": "Stocks" },
+  "app": { "title": "PATRIMONIO", "documentTitle": "Stocks" },
   "nav": {
     "summary": "Summary",
     "prices": "Prices",
@@ -10,6 +10,7 @@
     "funds": "Funds",
     "reserves": "Reserves",
     "cdts": "CDT",
+    "patrimonio": "Net worth",
     "balances": "Balances",
     "module": "Module"
   },
@@ -76,7 +77,7 @@
     "saved": "Prices saved"
   },
   "summary": {
-    "combined": "Combined total (stocks + funds + reserves + CDTs)",
+    "combined": "Combined total (stocks + funds + reserves + CDTs + goods)",
     "equities": "Stocks",
     "funds": "Funds",
     "total": "Current total (active holdings)",
@@ -153,7 +154,9 @@
     "bankExists": "A bank with that name already exists",
     "cdtExists": "A CDT with that name already exists",
     "cannotDeleteBank": "Cannot delete: this bank still has CDTs",
-    "maturityBeforeOpening": "Maturity must be after the opening date"
+    "maturityBeforeOpening": "Maturity must be after the opening date",
+    "assetNotFound": "Good not found",
+    "assetExists": "A good with that name already exists"
   },
   "funds": {
     "catalog": {
@@ -295,5 +298,17 @@
       "value": "Value",
       "noValue": "no value"
     }
+  },
+  "patrimonio": {
+    "title": "Net worth",
+    "equities": "Stocks total",
+    "funds": "Funds total",
+    "cdts": "CDTs total",
+    "goods": "Goods",
+    "name": "Good name",
+    "currency": "Good currency",
+    "value": "Value",
+    "noValue": "no value",
+    "confirmDelete": "Delete this good?"
   }
 }

@@ -1,5 +1,5 @@
 {
-  "app": { "title": "AZIONI", "documentTitle": "Azioni" },
+  "app": { "title": "PATRIMONIO", "documentTitle": "Azioni" },
   "nav": {
     "summary": "Riepilogo",
     "prices": "Prezzi",
@@ -10,6 +10,7 @@
     "funds": "Fondi",
     "reserves": "Riserve",
     "cdts": "CDT",
+    "patrimonio": "Patrimonio",
     "balances": "Saldi",
     "module": "Modulo"
   },
@@ -76,7 +77,7 @@
     "saved": "Prezzi salvati"
   },
   "summary": {
-    "combined": "Totale combinato (azioni + fondi + riserve + CDT)",
+    "combined": "Totale combinato (azioni + fondi + riserve + CDT + beni)",
     "equities": "Azioni",
     "funds": "Fondi",
     "total": "Totale attuale (titoli attivi)",
@@ -153,7 +154,9 @@
     "bankExists": "Esiste già una banca con questo nome",
     "cdtExists": "Esiste già un CDT con questo nome",
     "cannotDeleteBank": "Impossibile eliminare: questa banca ha ancora dei CDT",
-    "maturityBeforeOpening": "La scadenza deve essere successiva all'apertura"
+    "maturityBeforeOpening": "La scadenza deve essere successiva all'apertura",
+    "assetNotFound": "Bene non trovato",
+    "assetExists": "Esiste già un bene con questo nome"
   },
   "funds": {
     "catalog": {
@@ -295,5 +298,17 @@
       "value": "Valore",
       "noValue": "senza valore"
     }
+  },
+  "patrimonio": {
+    "title": "Patrimonio",
+    "equities": "Totale azioni",
+    "funds": "Totale fondi",
+    "cdts": "Totale CDT",
+    "goods": "Beni",
+    "name": "Nome del bene",
+    "currency": "Valuta del bene",
+    "value": "Valore",
+    "noValue": "senza valore",
+    "confirmDelete": "Eliminare questo bene?"
   }
 }

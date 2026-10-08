@@ -58,6 +58,8 @@ const EXACT: Record<string, string> = {
   cdt_exists: "errors.cdtExists",
   cannot_delete_bank: "errors.cannotDeleteBank",
   maturity_before_opening: "errors.maturityBeforeOpening",
+  asset_not_found: "errors.assetNotFound",
+  asset_exists: "errors.assetExists",
 };
 
 export function translateApiError(msg: string): string {

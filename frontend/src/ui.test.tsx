@@ -19,6 +19,7 @@ import FundsTrades from "./pages/funds/Trades";
 import ReserveBalances from "./pages/reserves/Balances";
 import ReservesCatalog from "./pages/reserves/Catalog";
 import CdtsCatalog from "./pages/cdts/Catalog";
+import Patrimonio from "./pages/Patrimonio";
 import { applyTheme, chartTheme, readTheme, ThemeProvider, useTheme } from "./theme";
 import i18n from "./i18n";
 
@@ -88,6 +89,10 @@ const api = vi.hoisted(() => ({
   createCdt: vi.fn(),
   patchCdt: vi.fn(),
   deleteCdt: vi.fn(),
+  assets: vi.fn(),
+  createAsset: vi.fn(),
+  patchAsset: vi.fn(),
+  deleteAsset: vi.fn(),
 }));
 
 vi.mock("./api", () => ({ api }));
@@ -337,6 +342,33 @@ beforeEach(async () => {
         },
       ],
     },
+    assets: {
+      total: "200000000",
+      positions: [
+        {
+          ...copPosition,
+          instrument_id: 1,
+          instrument_name: "Apto",
+          broker_id: 1,
+          broker_name: "",
+          balance: "200000000",
+          last_price: null,
+          value: "200000000",
+          weight_pct: null,
+        },
+        {
+          ...usdPosition,
+          instrument_id: 8,
+          instrument_name: "Lancha",
+          broker_id: 8,
+          broker_name: "",
+          balance: "10",
+          last_price: null,
+          value: "10",
+          weight_pct: null,
+        },
+      ],
+    },
   });
   api.institutions.mockResolvedValue([institution, otherInstitution]);
   api.reserveAccounts.mockResolvedValue([ceiba, apnea]);
@@ -404,6 +436,13 @@ beforeEach(async () => {
   api.createCdt.mockResolvedValue({ id: 92, name: "Plazo" });
   api.patchCdt.mockResolvedValue({ id: 92, name: "Plazo" });
   api.deleteCdt.mockResolvedValue(undefined);
+  api.assets.mockResolvedValue([
+    { id: 1, name: "Apto", currency: "COP" as const, value: "200000000", year: 2026, month: 9, active: true },
+    { id: 2, name: "Carro", currency: "COP" as const, value: "1000", year: 2024, month: 1, active: false },
+  ]);
+  api.createAsset.mockResolvedValue({ id: 3, name: "Lote", currency: "USD", value: "10", year: 2026, month: 9, active: true });
+  api.patchAsset.mockResolvedValue({ id: 1, name: "Apto", currency: "COP", value: "210000000", year: 2026, month: 9, active: true });
+  api.deleteAsset.mockResolvedValue(undefined);
   api.funds.mockResolvedValue([fund, { ...fund, id: 6, name: "FIC Off", active: false }]);
   api.fiduciaries.mockResolvedValue([fiduciary]);
   api.fundTrades.mockResolvedValue([
@@ -1069,6 +1108,7 @@ describe("summary block", () => {
       funds: { total: "0", positions: [] },
       reserves: { total: "0", positions: [] },
       cdts: { total: "0", positions: [] },
+      assets: { total: "0", positions: [] },
     });
     shell(<Summary />);
     await waitFor(() => expect(api.wealth).toHaveBeenCalled());
@@ -1094,12 +1134,18 @@ describe("app shell", () => {
     await user.click(screen.getByRole("link", { name: "TRM" }));
     await user.selectOptions(screen.getByLabelText("Módulo"), "funds");
     await user.selectOptions(screen.getByLabelText("Módulo"), "equities");
-    await user.selectOptions(screen.getByLabelText("Tema"), "light");
+    await user.click(screen.getByRole("button", { name: "Tema" }));
+    await user.click(screen.getByRole("button", { name: "Tema" }));
     await user.selectOptions(screen.getByLabelText("Moneda"), "USD");
-    await user.selectOptions(screen.getByLabelText("Idioma"), "en");
+    await user.click(screen.getByRole("button", { name: "Idioma" }));
+    fireEvent.pointerDown(document.body);
+    expect(screen.queryByRole("option", { name: "English" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Idioma" }));
+    await user.click(screen.getByRole("option", { name: "English" }));
     await user.click(screen.getByRole("link", { name: "Summary" }));
     await i18n.changeLanguage("de");
-    expect((screen.getByLabelText("Idioma") as HTMLSelectElement).value).toBe("es");
+    await user.click(screen.getByRole("button", { name: "Idioma" }));
+    expect(screen.getByRole("option", { name: "Español" })).toHaveAttribute("aria-selected", "true");
   });
 
   it("switches between the paired equity and fund pages", async () => {
@@ -1151,9 +1197,9 @@ describe("app shell", () => {
     expect(counterpart("/cdts/catalog", "reserves")).toBe("/reserves/catalog");
     expect(counterpart("/fx", "cdts")).toBe("/fx");
     shell(<App />, "/funds");
-    await screen.findByText("Total combinado (acciones + fondos + reservas + CDTs)");
+    await screen.findByText("Total combinado (acciones + fondos + reservas + CDTs + bienes)");
     await user.selectOptions(screen.getByLabelText("Módulo"), "equities");
-    await screen.findByText("Total combinado (acciones + fondos + reservas + CDTs)");
+    await screen.findByText("Total combinado (acciones + fondos + reservas + CDTs + bienes)");
   });
 
   it("redirects the old Spanish paths", async () => {
@@ -1526,5 +1572,90 @@ describe("cdts", () => {
     await screen.findByText("Bancos");
     await user.selectOptions(screen.getByLabelText("Módulo"), "funds");
     await screen.findByText("FIC Uno");
+  });
+});
+
+describe("patrimonio", () => {
+  it("lists the books and replaces a good's value", async () => {
+    const user = userEvent.setup();
+    const home = shell(<App />, "/");
+    await user.click(await screen.findByRole("link", { name: "Patrimonio" }));
+    expect(await screen.findByText("Total acciones")).toBeInTheDocument();
+    expect(screen.getByText("Total fondos")).toBeInTheDocument();
+    expect(screen.getByText("Total CDTs")).toBeInTheDocument();
+    expect(screen.getByText("Ceiba")).toBeInTheDocument();
+    expect(screen.getAllByText("sin valor").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Apto").length).toBeGreaterThan(0);
+    expect(screen.getByText(/Carro · COP · .*1\.000 · 2024-1/)).toBeInTheDocument();
+    expect(screen.getByText(/inactivo/)).toBeInTheDocument();
+    home.unmount();
+
+    shell(<Patrimonio />);
+    await screen.findByText("Total acciones");
+    fireEvent.change(screen.getByLabelText("Nombre del bien"), { target: { value: "Lote" } });
+    await user.selectOptions(screen.getByLabelText("Moneda del bien"), "USD");
+    fireEvent.change(screen.getByLabelText("Valor"), { target: { value: "10" } });
+    setInput(screen.getByLabelText("Año"), "2025");
+    setInput(screen.getByLabelText("Mes"), "3");
+    await user.click(screen.getByRole("button", { name: "Agregar" }));
+    await waitFor(() =>
+      expect(api.createAsset).toHaveBeenCalledWith({
+        name: "Lote",
+        currency: "USD",
+        value: "10",
+        year: 2025,
+        month: 3,
+      }),
+    );
+
+    await user.click(screen.getAllByRole("button", { name: "Editar" })[0]);
+    fireEvent.change(screen.getByLabelText("Valor"), { target: { value: "210000000" } });
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    await waitFor(() =>
+      expect(api.patchAsset).toHaveBeenCalledWith(1, {
+        name: "Apto",
+        currency: "COP",
+        value: "210000000",
+        year: 2026,
+        month: 9,
+      }),
+    );
+    await user.click(screen.getAllByRole("button", { name: "Editar" })[1]);
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    await user.click(screen.getByRole("button", { name: "Inactivar" }));
+    await waitFor(() => expect(api.patchAsset).toHaveBeenCalledWith(1, { active: false }));
+    await user.click(screen.getByRole("button", { name: "Activar" }));
+    await waitFor(() => expect(api.patchAsset).toHaveBeenCalledWith(2, { active: true }));
+
+    window.confirm = vi.fn(() => false);
+    await user.click(screen.getAllByRole("button", { name: "Borrar" })[1]);
+    expect(api.deleteAsset).not.toHaveBeenCalled();
+    vi.mocked(window.confirm).mockReturnValue(true);
+    await user.click(screen.getAllByRole("button", { name: "Borrar" })[1]);
+    await waitFor(() => expect(api.deleteAsset).toHaveBeenCalledWith(2));
+    await user.click(screen.getAllByRole("button", { name: "Editar" })[0]);
+    await user.click(screen.getAllByRole("button", { name: "Borrar" })[0]);
+    await waitFor(() => expect(api.deleteAsset).toHaveBeenCalledWith(1));
+
+    api.createAsset.mockRejectedValueOnce(new Error("bien"));
+    fireEvent.change(screen.getByLabelText("Nombre del bien"), { target: { value: "Lote" } });
+    fireEvent.change(screen.getByLabelText("Valor"), { target: { value: "10" } });
+    await user.click(screen.getByRole("button", { name: "Agregar" }));
+    expect(await screen.findByText("bien")).toBeInTheDocument();
+    api.createAsset.mockRejectedValueOnce("x");
+    await user.click(screen.getByRole("button", { name: "Agregar" }));
+    expect(await screen.findByText("Error")).toBeInTheDocument();
+    api.patchAsset.mockRejectedValueOnce(new Error("no toggle"));
+    await user.click(screen.getByRole("button", { name: "Inactivar" }));
+    expect(await screen.findByText("no toggle")).toBeInTheDocument();
+    api.deleteAsset.mockRejectedValueOnce(new Error("no borra"));
+    vi.mocked(window.confirm).mockReturnValue(true);
+    await user.click(screen.getAllByRole("button", { name: "Borrar" })[0]);
+    expect(await screen.findByText("no borra")).toBeInTheDocument();
+
+    api.wealth.mockRejectedValueOnce(new Error("carga"));
+    shell(<Patrimonio />);
+    expect(await screen.findByText("carga")).toBeInTheDocument();
   });
 });

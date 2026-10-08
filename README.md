@@ -1,10 +1,10 @@
-# Stocks
+# Patrimonio
 
 **English** | [Español](README.es.md)
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-Track a stock portfolio in Colombia (COP) and the United States (USD), plus Colombian collective funds (FIC) in the same app. Buys, sells, subscriptions, redemptions, per-trade commission, month-by-month market or unit values, and a sell target are entered by hand. Balance, current value, percentages, and progress to target are calculated; they are not stored twice.
+Personal wealth in one app: Colombian and US stocks (COP and USD), collective funds (FIC), reserve accounts such as pension and severance, term deposits (CDT), and goods such as an apartment or a car. Amounts are entered by hand. Balances, current values, and the combined total are calculated; they are not stored twice.
 
 ## Features
 

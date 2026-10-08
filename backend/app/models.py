@@ -114,6 +114,7 @@ class FxRate(Base):
     cop_per_usd: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
 
 
+from app.assets.models import Asset  # noqa: E402, F401
 from app.funds.models import Fiduciary, Fund, FundTarget, FundTrade, FundUnitValue  # noqa: E402, F401
 from app.cdts.models import Bank, Cdt  # noqa: E402, F401
 from app.reserves.models import Institution, ReserveAccount, ReserveBalance  # noqa: E402, F401

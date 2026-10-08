@@ -174,3 +174,11 @@ The client converts a valued deposit with the TRM of the month used in that calc
 - Status: Accepted
 
 The calculated value from 0022 stays the number in the wealth total. The certificate is stored beside it: term in days, yield payment mode (`at_maturity` or `in_advance`), payment frequency, whether the yield is capitalized, last-period gross yield, net yield, and withholding. If the term is left empty, it is the number of days between the opening date and the maturity date. The form shows a name on every field. These amounts are what the bank reported. They do not replace the calculated value.
+
+## 0024. Physical goods stay in this app, with one current value
+
+- Status: Accepted
+
+An apartment or a car is not a separate application. Stocks, funds, Apnea, and severance already have a value here. A good is a name, a currency, and one current value, together with the year and month of that value. Saving again replaces the value and the month. There is no history and no depreciation formula. The seed does not invent goods.
+
+The patrimonio page reads those goods, the equity total, the fund total, each active reserve account, and the CDT total. It does not ask for Apnea or severance a second time. An inactive good leaves that page. A reserve account with no balance stays on the list and stays out of the sum. The combined total on the summary includes the goods, so the two figures match. A good in another currency makes the native total null. The screen still converts each line with the TRM of its own month.

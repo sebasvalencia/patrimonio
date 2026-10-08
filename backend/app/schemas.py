@@ -172,6 +172,7 @@ class WealthOut(BaseModel):
     funds: SummaryOut
     reserves: ReserveSummaryOut
     cdts: CdtSummaryOut
+    assets: SummaryOut
     total: VisibleDecimal | None
 
 

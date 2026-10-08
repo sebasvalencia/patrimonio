@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { ES, GB, IT } from "country-flag-icons/react/3x2";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useCurrency } from "./currency";
 import type { DisplayCurrency } from "./format";
-import { LANGS, setLanguage, type Lang } from "./i18n";
-import { THEMES, useTheme } from "./theme";
+import { isLang, LANGS, setLanguage, type Lang } from "./i18n";
+import { useTheme } from "./theme";
 import Catalog from "./pages/Catalog";
 import FxRates from "./pages/FxRates";
 import Prices from "./pages/Prices";
@@ -16,6 +17,7 @@ import FundsTrades from "./pages/funds/Trades";
 import ReserveBalances from "./pages/reserves/Balances";
 import ReservesCatalog from "./pages/reserves/Catalog";
 import CdtsCatalog from "./pages/cdts/Catalog";
+import Patrimonio from "./pages/Patrimonio";
 
 const link = ({ isActive }: { isActive: boolean }) =>
   `px-3 py-2 rounded-md text-sm font-medium ${
@@ -26,6 +28,85 @@ const CURRENCIES: DisplayCurrency[] = ["COP", "USD"];
 
 const compactSelect =
   "rounded border border-line bg-surface-2 px-2 py-1 text-xs text-ink";
+
+function ThemeIcon({ mode }: { mode: "dark" | "light" }) {
+  if (mode === "dark") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
+        <path d="M21 14.5A8.5 8.5 0 0 1 9.5 3a7 7 0 1 0 11.5 11.5z" />
+      </svg>
+    );
+  }
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+    </svg>
+  );
+}
+
+const LANGUAGE_FLAGS = { es: ES, en: GB, it: IT } as const;
+
+function LanguageMenu() {
+  const { t, i18n } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const lang: Lang = isLang(i18n.language) ? i18n.language : "es";
+  const CurrentFlag = LANGUAGE_FLAGS[lang];
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(event: PointerEvent) {
+      if (rootRef.current!.contains(event.target as Node)) return;
+      setOpen(false);
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={rootRef}>
+      <button
+        type="button"
+        aria-label={t("lang.label")}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        className="inline-flex items-center justify-center rounded border border-line bg-surface-2 p-1"
+        onClick={() => setOpen((value) => !value)}
+      >
+        <CurrentFlag className="h-4 w-6" aria-hidden="true" />
+      </button>
+      {open && (
+        <ul
+          role="listbox"
+          aria-label={t("lang.label")}
+          className="absolute right-0 z-20 mt-1 min-w-36 rounded border border-line bg-surface-2 py-1 text-xs text-ink shadow-md"
+        >
+          {LANGS.map((code) => {
+            const Flag = LANGUAGE_FLAGS[code];
+            return (
+              <li key={code} role="presentation">
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={code === lang}
+                  className={`flex w-full items-center gap-2 px-2 py-1 text-left hover:bg-surface ${code === lang ? "bg-surface" : ""}`}
+                  onClick={() => {
+                    setLanguage(code);
+                    setOpen(false);
+                  }}
+                >
+                  <Flag className="h-4 w-6" aria-hidden="true" />
+                  {t(`lang.${code}`)}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export type ModuleName = "equities" | "funds" | "reserves" | "cdts";
 
@@ -58,7 +139,7 @@ function moduleFromPath(path: string): ModuleName {
 }
 
 export default function App() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { currency, setCurrency } = useCurrency();
   const { theme, setTheme } = useTheme();
   const location = useLocation();
@@ -134,6 +215,9 @@ export default function App() {
               <NavLink to="/fx" className={link}>
                 {t("nav.fx")}
               </NavLink>
+              <NavLink to="/patrimonio" className={link}>
+                {t("nav.patrimonio")}
+              </NavLink>
             </nav>
             <select
               aria-label={t("nav.module")}
@@ -147,18 +231,6 @@ export default function App() {
               <option value="cdts">{t("nav.cdts")}</option>
             </select>
             <select
-              aria-label={t("theme.label")}
-              className={compactSelect}
-              value={theme}
-              onChange={(e) => setTheme(e.target.value as (typeof THEMES)[number])}
-            >
-              {THEMES.map((mode) => (
-                <option key={mode} value={mode}>
-                  {t(`theme.${mode}`)}
-                </option>
-              ))}
-            </select>
-            <select
               aria-label={t("currency.label")}
               className={compactSelect}
               value={currency}
@@ -170,18 +242,15 @@ export default function App() {
                 </option>
               ))}
             </select>
-            <select
-              aria-label={t("lang.label")}
-              className={compactSelect}
-              value={LANGS.includes(i18n.language as Lang) ? i18n.language : "es"}
-              onChange={(e) => setLanguage(e.target.value as Lang)}
+            <LanguageMenu />
+            <button
+              type="button"
+              aria-label={t("theme.label")}
+              className="ml-auto inline-flex items-center justify-center rounded border border-line bg-surface-2 p-1 text-ink"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             >
-              {LANGS.map((lng) => (
-                <option key={lng} value={lng}>
-                  {t(`lang.${lng}`)}
-                </option>
-              ))}
-            </select>
+              <ThemeIcon mode={theme} />
+            </button>
           </div>
         </div>
       </header>
@@ -201,6 +270,7 @@ export default function App() {
           <Route path="/reserves/balances" element={<ReserveBalances />} />
           <Route path="/cdts" element={<Summary />} />
           <Route path="/cdts/catalog" element={<CdtsCatalog />} />
+          <Route path="/patrimonio" element={<Patrimonio />} />
           <Route path="/precios" element={<Navigate to="/prices" replace />} />
           <Route path="/movimientos" element={<Navigate to="/trades" replace />} />
           <Route path="/catalogo" element={<Navigate to="/catalog" replace />} />

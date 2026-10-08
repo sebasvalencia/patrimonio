@@ -12,6 +12,7 @@ os.environ.setdefault("DATABASE_URL", "sqlite://")
 from app.database import Base, get_db
 from app.main import app
 from app.models import Broker, FxRate, Instrument, MonthlyPrice, PriceTarget, Trade  # noqa: F401
+from app.assets.models import Asset  # noqa: F401
 from app.funds.models import Fiduciary, Fund, FundTarget, FundTrade, FundUnitValue  # noqa: F401
 from app.cdts.models import Bank, Cdt  # noqa: F401
 from app.reserves.models import Institution, ReserveAccount, ReserveBalance  # noqa: F401

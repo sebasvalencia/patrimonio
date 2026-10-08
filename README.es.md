@@ -1,10 +1,10 @@
-# Acciones
+# Patrimonio
 
 [English](README.md) | **Español**
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-Registro y seguimiento de un portafolio de acciones de Colombia (COP) y de Estados Unidos (USD), más fondos colectivos (FIC) en la misma app. Se cargan a mano las compras, las ventas, las suscripciones, los rescates, la comisión de cada operación, el precio o valor de unidad mes a mes y el objetivo de venta. El saldo, el valor actual, los porcentajes y el avance al objetivo se calculan; no se guardan duplicados.
+Patrimonio personal en una sola app: acciones de Colombia y de Estados Unidos (COP y USD), fondos colectivos (FIC), cuentas de reserva como pensión y cesantías, CDT y bienes como un apartamento o un carro. Los montos se cargan a mano. Los saldos, el valor actual y el total combinado se calculan; no se guardan duplicados.
 
 ## Características
 

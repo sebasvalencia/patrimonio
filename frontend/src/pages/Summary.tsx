@@ -81,11 +81,13 @@ export default function SummaryPage() {
   const fdDisplay = useDisplayPositions(wealth?.funds.positions ?? []);
   const rsDisplay = useDisplayPositions(wealth?.reserves.positions ?? []);
   const cdtDisplay = useDisplayPositions(wealth?.cdts.positions ?? []);
+  const assetDisplay = useDisplayPositions(wealth?.assets.positions ?? []);
   const combinedTotal =
     eqDisplay.reduce((acc, p) => acc + Number(p.valueDisplay), 0) +
     fdDisplay.reduce((acc, p) => acc + Number(p.valueDisplay), 0) +
     rsDisplay.reduce((acc, p) => acc + Number(p.valueDisplay), 0) +
-    cdtDisplay.reduce((acc, p) => acc + Number(p.valueDisplay), 0);
+    cdtDisplay.reduce((acc, p) => acc + Number(p.valueDisplay), 0) +
+    assetDisplay.reduce((acc, p) => acc + Number(p.valueDisplay), 0);
 
   useEffect(() => {
     Promise.all([api.wealth(), api.instruments(), api.funds()])

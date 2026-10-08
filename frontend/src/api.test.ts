@@ -142,6 +142,10 @@ describe("api", () => {
     });
     await api.patchCdt(1, { active: false });
     await expect(api.deleteCdt(1)).resolves.toBeUndefined();
+    await api.assets();
+    await api.createAsset({ name: "Apto", currency: "COP", value: "1000", year: 2026, month: 9 });
+    await api.patchAsset(1, { value: "2500", year: 2025, month: 3 });
+    await expect(api.deleteAsset(1)).resolves.toBeUndefined();
 
     expect(String(fetchMock.mock.calls[0][0])).toBe("http://api.test/health");
   });

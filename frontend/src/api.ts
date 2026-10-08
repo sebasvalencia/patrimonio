@@ -232,11 +232,21 @@ export type CdtPosition = Position & {
   status: CdtStatus;
   liquid: boolean;
 } & CdtCertificate;
+export type Asset = {
+  id: number;
+  name: string;
+  currency: "COP" | "USD";
+  value: string;
+  year: number;
+  month: number;
+  active: boolean;
+};
 export type Wealth = {
   equities: Summary;
   funds: Summary;
   reserves: { total: string | null; positions: ReservePosition[] };
   cdts: { total: string | null; positions: CdtPosition[] };
+  assets: Summary;
   total: string | null;
 };
 
@@ -398,4 +408,12 @@ export const api = {
     },
   ) => req<Cdt>(`/cdts/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   deleteCdt: (id: number) => req<void>(`/cdts/${id}`, { method: "DELETE" }),
+  assets: () => req<Asset[]>("/assets"),
+  createAsset: (body: { name: string; currency: "COP" | "USD"; value: string; year: number; month: number }) =>
+    req<Asset>("/assets", { method: "POST", body: JSON.stringify(body) }),
+  patchAsset: (
+    id: number,
+    body: { name?: string; currency?: "COP" | "USD"; value?: string; year?: number; month?: number; active?: boolean },
+  ) => req<Asset>(`/assets/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  deleteAsset: (id: number) => req<void>(`/assets/${id}`, { method: "DELETE" }),
 };
