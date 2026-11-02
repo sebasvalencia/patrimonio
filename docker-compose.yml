@@ -20,7 +20,7 @@ services:
     build: ./backend
     pull_policy: missing
     ports:
-      - "8000:8000"
+      - "${API_PORT:-8000}:8000"
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     depends_on:
@@ -33,7 +33,7 @@ services:
     build: ./frontend
     pull_policy: missing
     ports:
-      - "5173:5173"
+      - "${WEB_PORT:-5173}:5173"
     environment:
       VITE_API_URL: ${VITE_API_URL}
     volumes:
